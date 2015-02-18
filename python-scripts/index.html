@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script type="text/javascript" src="d3.v3.min.js"></script>
+<script type="text/javascript" src="jquery-1.7.2.min.js"></script>
+<script type="text/javascript" src="underscore-min.js"></script>
+<script type="text/javascript" src="jquery.tipsy.js"></script>
+<script type="text/javascript" src="jquery.ba-bbq.min.js"></script>
+<script type="text/javascript" src="colorbrewer.js"></script>
+<link href="tipsy.css" rel="stylesheet" type="text/css" />
+<link href="font-awesome.min.css" rel="stylesheet" type="text/css" />
+<title>AutoNetkit</title>
+<link rel="stylesheet" type="text/css" href="default.css" title = "default">
+<link rel="alternate stylesheet" type="text/css" title="maximised" href = "maximised.css">
+<link rel="stylesheet" type="text/css" media="print" href="print.css">
+</head>
+<body>
+<div class="navbar">
+<b>ANK</b>
+<span id="websocket_icon"></span>
+| <select id = "overlay_select" width=10></select>
+<select id = "revision_select"></select>
+<!--- <button onclick="history_start();"><<</button>
+<button onclick="history_back();"><</button>
+<button onclick="history_forward();">></button>
+<button onclick="history_end();">>></button>
+!-->
+<!---<button onclick="javascript:setActiveStyleSheet('maximised');">Max</button>-->
+<!-- <button onclick="zoom_fit();"> <i class="icon-move "></i> </button> -->
+|
+<input type="checkbox" id="display_interfaces" value="display_interfaces" />
+<input type="checkbox" id="transition_multiplier" value="transition_multiplier" />
+|<select id = "node_label_select" width=10></select>
+<select id = "edge_group_select" width=10></select>
+<select id = "interface_label_select" width=10></select>
+<!--- | <button onclick="toggle_visibility('node_filter');">
+<i id="node_filter" class="icon-filter "></i>
+</button>
+-->
+<label for="display_interfaces">
+<!---<i class="icon-plus-sign-alt"></i>-->
+</label>
+</div>
+<!---
+<div class="node_filter" id="node_filter">
+</div>
+-->
+<div class="infobar"></div>
+<div class="visualisation""></div>
+<div class="size_box"><a href="javascript:setActiveStyleSheet('default');">Resize</a></div>
+<div>
+<script type="text/javascript">
+var socket_url = "ws://" + location.host + "/ws";
+socket_url += "?uuid=singleuser"; //Webserver template fills in the uuid
+var current_translate = "0,0";
+var overlay_id = "phy";
+//var overlay_id = "ospf";
+var display_interfaces = false;
+//var display_interfaces = true;
+var transition_multiplier = false;
+var revision_dropdown = d3.select("#revision_select")
+.attr("title", "Revision")
+.attr("style.display", "none")
+.on("change", function() {
+revision_id = this.value;
+load_revision();
+redraw(); //TODO: remove this once using websocket callback for next line
+});
+$('#revision_select').hide();
+var node_filter_button = d3.select("#node_filter")
+.attr("title", "Node Filter")
+d3.select("#display_interfaces")
+.attr("title", "Display Interfaces")
+d3.select("#transition_multiplier")
+.attr("title", "Animate Transitions")
+var node_label_select = d3.select("#node_label_select")
+.attr("title", "Node Label")
+.on("change", function() {
+node_label_id = this.value;
+redraw();
+})
+var edge_group_select = d3.select("#edge_group_select")
+.attr("title", "Edge Label")
+.on("change", function() {
+edge_group_id = this.value;
+redraw();
+})
+var interface_label_select = d3.select("#interface_label_select")
+.attr("title", "Interface Label")
+.on("change", function() {
+interface_label_id = this.value;
+redraw();
+})
+d3.select("#display_interfaces")
+.on("change", function() {
+display_interfaces = d3.select(this).property("checked");
+redraw();
+})
+d3.select("#transition_multiplier")
+.on("change", function() {
+animate_transitions = d3.select(this).property("checked");
+if(animate_transitions == true) {
+transition_multiplier = 1;
+} else {
+transition_multiplier = 0;
+}
+})
+var status_label = d3.select("navbar").append("text")
+.attr("class", "status label")
+.attr("y", 15)
+.attr("x", 0)
+.attr("font-size", "14")
+.text("")
+;
+var margin = {top: -5, right: -5, bottom: -5, left: -5},
+width = screen.width - margin.left - margin.right,
+//height = screen.height - margin.top - margin.bottom - 2*$(".navbar").height();
+height = 1000;
+var zoom = d3.behavior.zoom()
+.center([width / 2, height / 2])
+.scaleExtent([0.5, 10])
+.on("zoom", zoomed);
+//TODO: check out view-source:http://computing.dcu.ie/~dganguly/d3sliderzoom.htm
+//var slider = d3.select(".navbar").append("input")
+// .datum({})
+// .attr("type", "range")
+// .attr("value", zoom.scaleExtent()[0])
+// .attr("min", zoom.scaleExtent()[0])
+// .attr("max", zoom.scaleExtent()[1])
+// .attr("step", (zoom.scaleExtent()[1] - zoom.scaleExtent()[0]) / 100)
+//.on("input", slided);
+var chart = d3.select("body").append("svg")
+.attr("width", width + margin.left + margin.right)
+.attr("height", height + margin.top + margin.bottom)
+.append("g")
+.attr("transform", "translate(" + margin.left + "," + margin.right + ")")
+.call(zoom);
+var rect = chart.append("rect")
+.attr("width", width)
+.attr("height", height)
+.style("fill", "none")
+.style("pointer-events", "all");
+//TODO: create an svg:g to contain nodes, another the edges, to avoid overlap
+var container = chart.append("g")
+function zoomed() {
+container.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+//slider.property("value", d3.event.scale);
+}
+function toggle_visibility(id) {
+var e = document.getElementById(id);
+if(e.style.display == 'block')
+e.style.display = 'none';
+else
+e.style.display = 'block';
+}
+function slided(d){
+x = d3.transform(container.attr("transform")).translate[0];
+y = d3.transform(container.attr("transform")).translate[1];
+console.log(x,y);
+zoom.scale(d3.select(this).property("value"))
+//.translate([x,y])
+.event(container);
+}
+</script>
+<script type="text/javascript" src="ank_render.js"></script>
+<script type="text/javascript">
+var overlay_dropdown = d3.select("#overlay_select")
+.attr("title", "Overlay graph")
+.on("change", function() {
+overlay_id = this.value;
+ws.send("overlay_id=" + overlay_id);
+update_title(overlay_id, revision_id);
+clear_graph_history();
+});
+</script>
+</div>
+</body>
+</html>
