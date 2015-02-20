@@ -28,10 +28,17 @@ class router(object):
 class cdpEntry(object):
 	def __init__(self, hostname):
 		self.hostname = ''
-		self.type = ''
 		self.srcPort = ''
 		self.ipAddress = ''
 
+	def addHostname(self, hostname):
+		self.hostname = hostname
+
+	def addIpAddress(self, ipAddress):
+		self.ipAddress = ipAddress
+
+	def addSrcPort(self, srcPort):
+		self.srcPort = srcPort
 
 if __name__ == "__main__":
 	topology = routerList([])
@@ -92,4 +99,11 @@ if __name__ == "__main__":
 	interfaceOutput = filter(None, interfaceOutput)
 	print interfaceOutput
 
-	for index in len(hostnameOutput):
+	for idx, val in enumerate(hostnameOutput):
+		newCDP = cdpEntry([])
+		newCDP.addHostname(hostnameOutput[idx])
+		newCDP.addIpAddress(ipAddressOutput[idx])
+		newCDP.addSrcPort(interfaceOutput[idx])
+		baseRouter.addCdpEntry(newCDP)
+
+	print topology.routerList[0].cdp_entries[0].hostname
