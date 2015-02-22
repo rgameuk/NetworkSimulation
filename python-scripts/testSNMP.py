@@ -15,6 +15,7 @@ class router(object):
 		self.cdp_entries = []
 		self.hostname = ''
 		self.ipAddress = ''
+		self.capabilities = ''
 
 	def addCdpEntry(self, cdp_entry):
 		self.cdp_entries.append(cdp_entry)
@@ -24,6 +25,9 @@ class router(object):
 
 	def addIpAddress(self, ipAddress):
 		self.ipAddress = ipAddress
+
+	def addCapability(self, capability):
+		self.capabilities = capability
 
 class cdpEntry(object):
 	def __init__(self, hostname):
@@ -50,6 +54,8 @@ def getLocalCDPInfo(baseRouter):
 		cdpValues[idx] = val.partition(':')[2]
 	baseRouter.addHostname(cdpValues[0])
 	baseRouter.addIpAddress(cdpValues[1])
+	deviceCapability = getCapabilities(baseRouter)
+	baseRouter.addCapability(deviceCapability)
 	return baseRouter
 
 def getCDPHostnames(router):
@@ -61,6 +67,14 @@ def getCDPHostnames(router):
 		hostnameOutput[idx] = val.replace('"', '')
 	hostnameOutput = filter(None, hostnameOutput)
 	return hostnameOutput
+
+def getCapabilities(router):
+	capabilityOutput = subprocess.check_output(["snmpwalk", "-v", "2c", "-c", "public", router.ipAddress, ".1.3.6.1.2.1.4.1"])
+	if "forwarding(1)" in capabilityOutput:
+		deviceCapability = 'Router'
+	else:
+		deviceCapability = 'Switch'
+	return deviceCapability
 
 def getCDPIPs(router):
 	ipAddressOutput=subprocess.check_output(["snmpwalk", "-v", "2c", "-c", "public", router.ipAddress, "1.3.6.1.4.1.9.9.23.1.2.1.1.4"])
@@ -88,7 +102,25 @@ def getCDPInterfaces(router):
 		interfaceOutput[idx] = val.replace('"', '')
 	interfaceOutput = filter(None, interfaceOutput)
 	return interfaceOutput
-	
+
+def addRoutersFromCDP(cdpEntries):
+	for idx, val in enumerate(topology.routerList):
+		hostnameList = getCDPHostnames(val)
+		IPAddressList = getCDPIPs(val)
+		InterfaceList = getCDPInterfaces(val)
+		for i, discoverVal in enumerate(hostnameList):	#For all new routers
+			alreadyKnown = False
+			for j, routerVal in enumerate(topology.routerList): #For all stored routers
+				if discoverVal == routerVal.hostname:
+					alreadyKnown = True		#Does not make an new Router object as one already exists
+			if alreadyKnown == False:
+				newRouter = router([])
+				newRouter.addHostname(hostnameList[i])
+				newRouter.addIpAddress(IPAddressList[i])
+				topology.addRouter(newRouter)
+				deviceCapability = getCapabilities(newRouter)
+				newRouter.addCapability(deviceCapability)
+
 if __name__ == "__main__":
 	topology = routerList([])
 	baseRouter = router([])
@@ -97,16 +129,11 @@ if __name__ == "__main__":
 	IPAddressList = getCDPIPs(baseRouter)
 	InterfaceList = getCDPInterfaces(baseRouter)
 
-	print hostnameList
-	print IPAddressList
-	print InterfaceList
-
-	#for idx, val in enumerate(hostnameOutput):
-	#	newCDP = cdpEntry([])
-	#	newCDP.addHostname(hostnameOutput[idx])
-	#	newCDP.addIpAddress(ipAddressOutput[idx])
-	#	newCDP.addSrcPort(interfaceOutput[idx])
-	#	baseRouter.addCdpEntry(newCDP)
-
-	#print topology.routerList[0].cdp_entries[0].hostname
-
+	for idx, val in enumerate(hostnameList):
+		newCDP = cdpEntry([])
+		newCDP.addHostname(hostnameList[idx])
+		newCDP.addIpAddress(IPAddressList[idx])
+		newCDP.addSrcPort(InterfaceList[idx])
+		baseRouter.addCdpEntry(newCDP)
+	topology.addRouter(baseRouter)
+	addRoutersFromCDP(baseRouter.cdp_entries)
