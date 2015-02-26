@@ -33,6 +33,7 @@ class cdpEntry(object):
 	def __init__(self, hostname):
 		self.hostname = ''
 		self.srcPort = ''
+		self.dstPort = ''
 		self.ipAddress = ''
 
 	def addHostname(self, hostname):
@@ -43,6 +44,9 @@ class cdpEntry(object):
 
 	def addSrcPort(self, srcPort):
 		self.srcPort = srcPort
+
+	def addDstPort(self, dstPort):
+		self.dstPort = dstPort
 
 def getLocalCDPInfo(baseRouter):
 	cdpdiscovery = subprocess.check_output(["cdpr", "-d", "eth0"])
@@ -110,7 +114,7 @@ def getCdpSrcInterfaces(router):
 	intDict = {}
 	localIntIDList = string.split(localIntIDList, '\n')
 	for idx, val in enumerate(localIntIDList):
-		localIntIDList[idx] = val.partition('ifDescr.')[2]
+		localIntIDList[idx] = val.partition('ifDescr')[2]
 	for idx, val in enumerate(localIntIDList):
 		localIntIDList[idx] = val.partition(' =')[0]
 	localIntIDList = filter(None, localIntIDList)
@@ -125,13 +129,15 @@ def getCdpSrcInterfaces(router):
 		interfaceOutput[idx] = val.partition('9.9.23.1.2.1.1.7')[2]
 	for idx, val in enumerate(interfaceOutput):
 		searchInt = re.findall(r'^\.[0-9]+', interfaceOutput[idx])
-		
 		try:
 			interfaceOutput[idx] = (searchInt[0])
 		except:
 			pass
 	interfaceOutput = filter(None, interfaceOutput)
-	print interfaceOutput
+	for idx, val in enumerate(interfaceOutput):
+		interfaceOutput[idx] = intDict[val]
+	return interfaceOutput
+	
 	
 
 
@@ -153,12 +159,14 @@ def updateRouters(updateRouter):
 			newRouter.addCapability(deviceCapability)
 			hostnameList = getCDPHostnames(newRouter)
 			IPAddressList = getCDPIPs(newRouter)
-			InterfaceList = getCDPDstInterfaces(newRouter)
+			dstInterfaceList = getCDPDstInterfaces(newRouter)
+			srcInterfaceList = getCdpSrcInterfaces(newRouter)
 			for idx, val in enumerate(hostnameList):
 				newCDP = cdpEntry([])
 				newCDP.addHostname(hostnameList[idx])
 				newCDP.addIpAddress(IPAddressList[idx])
-				newCDP.addSrcPort(InterfaceList[idx])
+				newCDP.addSrcPort(srcInterfaceList[idx])
+				newCDP.addDstPort(dstInterfaceList[idx])
 				newRouter.addCdpEntry(newCDP)
 			topology.addRouter(newRouter)
 			updateRouters(newRouter)
@@ -170,24 +178,26 @@ if __name__ == "__main__":
 	getLocalCDPInfo(baseRouter)	
 	hostnameList = getCDPHostnames(baseRouter)
 	IPAddressList = getCDPIPs(baseRouter)
-	InterfaceList = getCDPDstInterfaces(baseRouter)
+	dstInterfaceList = getCDPDstInterfaces(baseRouter)
+	srcInterfaceList = getCdpSrcInterfaces(baseRouter)
 
 	for idx, val in enumerate(hostnameList):
 		newCDP = cdpEntry([])
 		newCDP.addHostname(hostnameList[idx])
 		newCDP.addIpAddress(IPAddressList[idx])
-		
+		newCDP.addSrcPort(srcInterfaceList[idx])
+		newCDP.addDstPort(dstInterfaceList[idx])
 		baseRouter.addCdpEntry(newCDP)
 	#EDITS BELOW
-	getCdpSrcInterfaces(baseRouter)
+	#getCdpSrcInterfaces(baseRouter)
 	topology.addRouter(baseRouter)
 	#addRoutersFromCDP(baseRouter.cdp_entries)
 
-	#updateRouters(baseRouter)
-	#for j, routerVal in enumerate(topology.routerList):
-	#	print routerVal.hostname + ":" + routerVal.ipAddress + ":" + routerVal.capabilities
-	#	for val in routerVal.cdp_entries:
-	#		print val.hostname + " on " + val.srcPort
-	#	print ""
+	updateRouters(baseRouter)
+	for j, routerVal in enumerate(topology.routerList):
+		print routerVal.hostname + ":" + routerVal.ipAddress + ":" + routerVal.capabilities
+		for val in routerVal.cdp_entries:
+			print val.hostname + " on " + val.srcPort + " (local) " + val.dstPort + " (destination)"
+		print ""
 
 

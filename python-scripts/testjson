@@ -1,7 +1,7 @@
 {
     "directed": false, "graph": [], "multigraph": false,
     "links": [
-    {"dst": "r2", "dst_port": "eth0", "src": "r1", "src_port": "eth0"},
+    {"dst": "r2", "dst_port": "se0/1", "src": "r1", "src_port": "se0/1"},
     {"dst": "r3", "dst_port": "eth0", "src": "r1", "src_port": "eth1"},
     {"dst": "r3", "dst_port": "eth1", "src": "r2", "src_port": "eth1"},
     {"dst": "r2", "dst_port": "eth2", "src": "r4", "src_port": "eth0"},
@@ -13,7 +13,7 @@
         "asn": 1, "device_type": "router", "id": "r1", "x": 350, "y": 400,
         "ports": [
         {"category": "loopback", "description": null, "id": "Loopback0"},
-        {"category": "physical", "description": "r1 to r2", "id": "eth0"},
+        {"category": "physical", "description": "r1 to r2", "id": "se0/1"},
         {"category": "physical", "description": "r1 to r3", "id": "eth1"}
         ]
     },
