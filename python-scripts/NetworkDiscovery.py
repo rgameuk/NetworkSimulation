@@ -2,6 +2,7 @@ import os
 import subprocess
 import string
 import re
+import cPickle as pickle
 
 class routerList(object):
 	def __init__(self, routerList):
@@ -38,15 +39,25 @@ class cdpEntry(object):
 
 	def addHostname(self, hostname):
 		self.hostname = hostname
-
 	def addIpAddress(self, ipAddress):
 		self.ipAddress = ipAddress
-
 	def addSrcPort(self, srcPort):
 		self.srcPort = srcPort
-
 	def addDstPort(self, dstPort):
 		self.dstPort = dstPort
+
+class routerChanges(object):
+	def __init__(self, hostname):
+		self.hostname = ''
+		self.orignalPort = ''
+		self.newPort = ''
+
+	def addHostname(self, hostname):
+		self.hostname = hostname
+	def addOrignalPort(self, orignalPort):
+		self.orignalPort = orignalPort
+	def addNewPort(self, newPort):
+		self.newPort = newPort
 
 def getLocalCDPInfo(baseRouter):
 	cdpdiscovery = subprocess.check_output(["cdpr", "-d", "eth0"])
@@ -138,9 +149,6 @@ def getCdpSrcInterfaces(router):
 		interfaceOutput[idx] = intDict[val]
 	return interfaceOutput
 	
-	
-
-
 def updateRouters(updateRouter):
 	routerHosts = getCDPHostnames(updateRouter)
 	routerIPs = getCDPIPs(updateRouter)
@@ -171,6 +179,23 @@ def updateRouters(updateRouter):
 			topology.addRouter(newRouter)
 			updateRouters(newRouter)
 
+def formatInterfaces(topology):
+	#Account for 0/0, serial, fastEthernet and 0/0/0 etc.
+	intChanges = []
+	for idx, val in enumerate(topology.routerList):
+		routerIntChanges = routerChanges([])
+		routerIntChanges.addHostname(val.hostname)
+		interfaceValues = []
+		newValues = []
+		for cdpIDX, cdpVal in enumerate(val.cdp_entries):
+			#newInterface = cdpVal.srcPort.replace("Serial", "GigabitEthernet")
+			interfaceValues.append(cdpVal.srcPort)
+		if "GigabitEthernet0/0" in interfaceValues:
+			routerIntChanges.addOrignalPort('GigabitEthernet0/1')
+			routerIntChanges.addNewPort('GigabitEthernet0/1')
+			intChanges.append(routerIntChanges)
+		#print interfaceValues
+
 
 if __name__ == "__main__":
 	topology = routerList([])
@@ -199,5 +224,6 @@ if __name__ == "__main__":
 		for val in routerVal.cdp_entries:
 			print val.hostname + " on " + val.srcPort + " (local) " + val.dstPort + " (destination)"
 		print ""
+	pickle.dump(topology, open("topologyData.p", "wb"))
 
-
+	formatInterfaces(topology)
