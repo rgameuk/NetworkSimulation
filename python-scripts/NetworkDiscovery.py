@@ -190,10 +190,24 @@ def formatInterfaces(topology):
 		for cdpIDX, cdpVal in enumerate(val.cdp_entries):
 			#newInterface = cdpVal.srcPort.replace("Serial", "GigabitEthernet")
 			interfaceValues.append(cdpVal.srcPort)
-		if "GigabitEthernet0/0" in interfaceValues:
-			routerIntChanges.addOrignalPort('GigabitEthernet0/1')
-			routerIntChanges.addNewPort('GigabitEthernet0/1')
-			intChanges.append(routerIntChanges)
+		interfaceValues.sort()
+		#TODO: Prioritise Gigabit interfaces over Fa and Se
+		# Idea: Three lists for each int type which is the combined?
+		localChanges = {}
+		for intIDX, intVAL in enumerate(interfaceValues):
+			if interfaceValues[intIDX] in localChanges:
+				pass
+			else:
+				newInterface = "GigabitEthernet0/" + str(len(localChanges) + 1)
+				localChanges[intVAL] = newInterface
+		for val in enumerate(localChanges):
+			routerIntChanges.addOrignalPort(val)
+			#intNumb = re.findall(r'[0-9]/[0-9]+', interfaceValues[intIDX])
+			#try:
+			#	interfaceValues[intIDX] = (intNumb[intIDX])
+			#except:
+			#	pass
+			#print interfaceValues
 		#print interfaceValues
 
 
@@ -219,11 +233,11 @@ if __name__ == "__main__":
 	#addRoutersFromCDP(baseRouter.cdp_entries)
 
 	updateRouters(baseRouter)
-	for j, routerVal in enumerate(topology.routerList):
-		print routerVal.hostname + ":" + routerVal.ipAddress + ":" + routerVal.capabilities
-		for val in routerVal.cdp_entries:
-			print val.hostname + " on " + val.srcPort + " (local) " + val.dstPort + " (destination)"
-		print ""
+	#for j, routerVal in enumerate(topology.routerList):
+	#	print routerVal.hostname + ":" + routerVal.ipAddress + ":" + routerVal.capabilities
+	#	for val in routerVal.cdp_entries:
+	#		print val.hostname + " on " + val.srcPort + " (local) " + val.dstPort + " (destination)"
+	#	print ""
 	pickle.dump(topology, open("topologyData.p", "wb"))
 
 	formatInterfaces(topology)
