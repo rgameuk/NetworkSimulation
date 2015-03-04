@@ -170,8 +170,9 @@ The creation of these systems needs to be done in a real-world environment, howe
 \includegraphics[width=0.8\textwidth]{Lab-Design.png}
 \end{center}
 
+A key feature of the a simulation tool is the ability to replicate a 'Real-world' network in emulated space. In order to gather the information required for this feature an extra toolset for Network Discovery has been created. This allows a user to discover devices on the network and extract interface information and router configurations in order to build an emulated instance of the network.
 
-For the development of my Router Discovery tool I have implemented the design above. As explained earlier this is implemented within GNS3 to utilise it's simulation of real IOS images. The above shows a Topology I have created as a use-case for simulation testing, however in order to add the Network Discovery tool I have included an Ubuntu 14.04 server and a connection to the Internet (Cloud 1).
+For the development of this Router Discovery tool the above topology was created and used. As explained earlier this is implemented within GNS3 to utilise it's simulation of real IOS images. The above shows a Topology I have created as a use-case for simulation testing, however in order to add the Network Discovery tool I have included an Ubuntu 14.04 server and a connection to the Internet (Cloud 1).
 
 The Ubuntu server is implemented using VirtualBox integration within GNS3 and allows direct connection to the 172.30.0.0/24 network. This Ubuntu server will hold the tool used for Router Discovery and Configuration Extraction. As this server is sitting on the same private network as all of the routers this allows me to find all the routers using defined ip addresses or through using CDP.
 
