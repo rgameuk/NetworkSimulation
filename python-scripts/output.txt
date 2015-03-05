@@ -1,0 +1,103 @@
+Adding R4
+Router Exists
+Adding R2
+Router Exists
+Adding R1
+Router Exists
+Router Exists
+Adding R5
+Router Exists
+Router Exists
+R3 was: FastEthernet0/1 now: GigabitEthernet0/1
+R3 was: Serial0/0 now: GigabitEthernet0/2
+R4 was: Serial0/0 now: GigabitEthernet0/1
+R2 was: FastEthernet0/0 now: GigabitEthernet0/1
+R2 was: Serial0/0 now: GigabitEthernet0/2
+R1 was: FastEthernet0/0 now: GigabitEthernet0/1
+R5 was: Serial0/0 now: GigabitEthernet0/1
+{
+    "linksList": [
+        {
+            "dstPort": "GigabitEthernet0/1", 
+            "dstRouter": "R4", 
+            "srcPort": "GigabitEthernet0/2", 
+            "srcRouter": "R3"
+        }, 
+        {
+            "dstPort": "GigabitEthernet0/1", 
+            "dstRouter": "R2", 
+            "srcPort": "GigabitEthernet0/1", 
+            "srcRouter": "R3"
+        }, 
+        {
+            "dstPort": "GigabitEthernet0/1", 
+            "dstRouter": "R1", 
+            "srcPort": "GigabitEthernet0/1", 
+            "srcRouter": "R3"
+        }, 
+        {
+            "dstPort": "GigabitEthernet0/2", 
+            "dstRouter": "R3", 
+            "srcPort": "GigabitEthernet0/1", 
+            "srcRouter": "R4"
+        }, 
+        {
+            "dstPort": "GigabitEthernet0/1", 
+            "dstRouter": "R3", 
+            "srcPort": "GigabitEthernet0/1", 
+            "srcRouter": "R2"
+        }, 
+        {
+            "dstPort": "GigabitEthernet0/1", 
+            "dstRouter": "R1", 
+            "srcPort": "GigabitEthernet0/1", 
+            "srcRouter": "R2"
+        }, 
+        {
+            "dstPort": "GigabitEthernet0/1", 
+            "dstRouter": "R5", 
+            "srcPort": "GigabitEthernet0/2", 
+            "srcRouter": "R2"
+        }, 
+        {
+            "dstPort": "GigabitEthernet0/1", 
+            "dstRouter": "R3", 
+            "srcPort": "GigabitEthernet0/1", 
+            "srcRouter": "R1"
+        }, 
+        {
+            "dstPort": "GigabitEthernet0/1", 
+            "dstRouter": "R2", 
+            "srcPort": "GigabitEthernet0/1", 
+            "srcRouter": "R1"
+        }, 
+        {
+            "dstPort": "GigabitEthernet0/2", 
+            "dstRouter": "R2", 
+            "srcPort": "GigabitEthernet0/1", 
+            "srcRouter": "R5"
+        }
+    ], 
+    "nodeList": [
+        {
+            "deviceType": "Router", 
+            "hostname": "R3"
+        }, 
+        {
+            "deviceType": "Router", 
+            "hostname": "R4"
+        }, 
+        {
+            "deviceType": "Router", 
+            "hostname": "R2"
+        }, 
+        {
+            "deviceType": "Router", 
+            "hostname": "R1"
+        }, 
+        {
+            "deviceType": "Router", 
+            "hostname": "R5"
+        }
+    ]
+}

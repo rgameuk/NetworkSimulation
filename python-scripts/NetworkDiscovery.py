@@ -3,6 +3,7 @@ import subprocess
 import string
 import re
 import cPickle as pickle
+import json
 
 class routerList(object):
 	def __init__(self, routerList):
@@ -65,6 +66,15 @@ class routerChanges(object):
 		self.orignalPort = orignalPort
 	def addNewPort(self, newPort):
 		self.newPort = newPort
+
+class jsonObject(object):
+	def __init__(self, linksList):
+		self.linksList = []
+		self.nodeList = []
+	def appendLink(self, newLink):
+		self.linksList.append(newLink)
+	def appendNode(self, newNode):
+		self.nodeList.append(newNode)
 
 def getLocalCDPInfo(baseRouter):
 	cdpdiscovery = subprocess.check_output(["cdpr", "-d", "eth0"])
@@ -239,6 +249,23 @@ def replaceInterfaces(topology, intChanges):
 				elif val.hostname == intChanges.changeList[i].hostname and val.dstPort == intChanges.changeList[i].orignalPort:
 					topology.routerList[j].cdp_entries[k].dstPort = intChanges.changeList[i].newPort
 		
+def createJSON(topology):
+	jsonTopology = jsonObject([])
+	for idx, val in enumerate(topology.routerList):
+		nodeDict = {}
+		nodeDict['deviceType'] = val.capabilities
+		nodeDict['hostname'] = val.hostname
+		for cdpIDX, cdpVal in enumerate(val.cdp_entries):
+			linksDict = {}
+			linksDict['srcRouter'] = val.hostname
+			linksDict['srcPort'] = cdpVal.srcPort
+			linksDict['dstRouter'] = cdpVal.hostname
+			linksDict['dstPort'] = cdpVal.dstPort
+			jsonTopology.appendLink(linksDict)
+		jsonTopology.appendNode(nodeDict)
+	jsonOutput = json.dumps(vars(jsonTopology),sort_keys=True,indent=4)
+	with open('topology.json', 'w') as outfile:
+		json.dump(jsonOutput, outfile,ensure_ascii=False)
 
 if __name__ == "__main__":
 	topology = routerList([])
@@ -262,19 +289,14 @@ if __name__ == "__main__":
 	#addRoutersFromCDP(baseRouter.cdp_entries)
 
 	updateRouters(baseRouter)
-	for j, routerVal in enumerate(topology.routerList):
-		print routerVal.hostname + ":" + routerVal.ipAddress + ":" + routerVal.capabilities
-		for val in routerVal.cdp_entries:
-			print val.hostname + " on " + val.srcPort + " (local) " + val.dstPort + " (destination)"
-		print ""
+	#for j, routerVal in enumerate(topology.routerList):
+	#	print routerVal.hostname + ":" + routerVal.ipAddress + ":" + routerVal.capabilities
+	#	for val in routerVal.cdp_entries:
+	#		print val.hostname + " on " + val.srcPort + " (local) " + val.dstPort + " (destination)"
+	#	print ""
 	pickle.dump(topology, open("topologyData.p", "wb"))
 
 	formatInterfaces(topology)
+	pickle.dump(topology, open("simulationTopology.p", "wb"))
 
-	print "Formatted:"
-
-	for j, routerVal in enumerate(topology.routerList):
-		print routerVal.hostname + ":" + routerVal.ipAddress + ":" + routerVal.capabilities
-		for val in routerVal.cdp_entries:
-			print val.hostname + " on " + val.srcPort + " (local) " + val.dstPort + " (destination)"
-		print ""
+	createJSON(topology)
