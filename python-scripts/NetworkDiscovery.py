@@ -263,9 +263,10 @@ def createJSON(topology):
 			linksDict['dstPort'] = cdpVal.dstPort
 			jsonTopology.appendLink(linksDict)
 		jsonTopology.appendNode(nodeDict)
-	jsonOutput = json.dumps(vars(jsonTopology),sort_keys=True,indent=4)
+	#jsonOutput = json.dumps(vars(jsonTopology),indent=4)
 	with open('topology.json', 'w') as outfile:
-		json.dump(jsonOutput, outfile,ensure_ascii=False)
+		json.dump(vars(jsonTopology), outfile,indent=4)
+		#json.dump(jsonOutput, outfile,ensure_ascii=False)
 
 if __name__ == "__main__":
 	topology = routerList([])

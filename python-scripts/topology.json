@@ -1,1 +1,86 @@
-"{\n    \"linksList\": [\n        {\n            \"dstPort\": \"GigabitEthernet0/1\",\n            \"dstRouter\": \"R4\",\n            \"srcPort\": \"GigabitEthernet0/2\",\n            \"srcRouter\": \"R3\"\n        },\n        {\n            \"dstPort\": \"GigabitEthernet0/1\",\n            \"dstRouter\": \"R2\",\n            \"srcPort\": \"GigabitEthernet0/1\",\n            \"srcRouter\": \"R3\"\n        },\n        {\n            \"dstPort\": \"GigabitEthernet0/1\",\n            \"dstRouter\": \"R1\",\n            \"srcPort\": \"GigabitEthernet0/1\",\n            \"srcRouter\": \"R3\"\n        },\n        {\n            \"dstPort\": \"GigabitEthernet0/2\",\n            \"dstRouter\": \"R3\",\n            \"srcPort\": \"GigabitEthernet0/1\",\n            \"srcRouter\": \"R4\"\n        },\n        {\n            \"dstPort\": \"GigabitEthernet0/1\",\n            \"dstRouter\": \"R3\",\n            \"srcPort\": \"GigabitEthernet0/1\",\n            \"srcRouter\": \"R2\"\n        },\n        {\n            \"dstPort\": \"GigabitEthernet0/1\",\n            \"dstRouter\": \"R1\",\n            \"srcPort\": \"GigabitEthernet0/1\",\n            \"srcRouter\": \"R2\"\n        },\n        {\n            \"dstPort\": \"GigabitEthernet0/1\",\n            \"dstRouter\": \"R5\",\n            \"srcPort\": \"GigabitEthernet0/2\",\n            \"srcRouter\": \"R2\"\n        },\n        {\n            \"dstPort\": \"GigabitEthernet0/1\",\n            \"dstRouter\": \"R3\",\n            \"srcPort\": \"GigabitEthernet0/1\",\n            \"srcRouter\": \"R1\"\n        },\n        {\n            \"dstPort\": \"GigabitEthernet0/1\",\n            \"dstRouter\": \"R2\",\n            \"srcPort\": \"GigabitEthernet0/1\",\n            \"srcRouter\": \"R1\"\n        },\n        {\n            \"dstPort\": \"GigabitEthernet0/2\",\n            \"dstRouter\": \"R2\",\n            \"srcPort\": \"GigabitEthernet0/1\",\n            \"srcRouter\": \"R5\"\n        }\n    ],\n    \"nodeList\": [\n        {\n            \"deviceType\": \"Router\",\n            \"hostname\": \"R3\"\n        },\n        {\n            \"deviceType\": \"Router\",\n            \"hostname\": \"R4\"\n        },\n        {\n            \"deviceType\": \"Router\",\n            \"hostname\": \"R2\"\n        },\n        {\n            \"deviceType\": \"Router\",\n            \"hostname\": \"R1\"\n        },\n        {\n            \"deviceType\": \"Router\",\n            \"hostname\": \"R5\"\n        }\n    ]\n}"
+{
+    "nodeList": [
+        {
+            "hostname": "R3", 
+            "deviceType": "Router"
+        }, 
+        {
+            "hostname": "R4", 
+            "deviceType": "Router"
+        }, 
+        {
+            "hostname": "R1", 
+            "deviceType": "Router"
+        }, 
+        {
+            "hostname": "R2", 
+            "deviceType": "Router"
+        }, 
+        {
+            "hostname": "R5", 
+            "deviceType": "Router"
+        }
+    ], 
+    "linksList": [
+        {
+            "srcPort": "GigabitEthernet0/2", 
+            "dstPort": "GigabitEthernet0/1", 
+            "dstRouter": "R4", 
+            "srcRouter": "R3"
+        }, 
+        {
+            "srcPort": "GigabitEthernet0/1", 
+            "dstPort": "GigabitEthernet0/1", 
+            "dstRouter": "R1", 
+            "srcRouter": "R3"
+        }, 
+        {
+            "srcPort": "GigabitEthernet0/1", 
+            "dstPort": "GigabitEthernet0/1", 
+            "dstRouter": "R2", 
+            "srcRouter": "R3"
+        }, 
+        {
+            "srcPort": "GigabitEthernet0/1", 
+            "dstPort": "GigabitEthernet0/2", 
+            "dstRouter": "R3", 
+            "srcRouter": "R4"
+        }, 
+        {
+            "srcPort": "GigabitEthernet0/1", 
+            "dstPort": "GigabitEthernet0/1", 
+            "dstRouter": "R3", 
+            "srcRouter": "R1"
+        }, 
+        {
+            "srcPort": "GigabitEthernet0/1", 
+            "dstPort": "GigabitEthernet0/1", 
+            "dstRouter": "R2", 
+            "srcRouter": "R1"
+        }, 
+        {
+            "srcPort": "GigabitEthernet0/1", 
+            "dstPort": "GigabitEthernet0/1", 
+            "dstRouter": "R3", 
+            "srcRouter": "R2"
+        }, 
+        {
+            "srcPort": "GigabitEthernet0/1", 
+            "dstPort": "GigabitEthernet0/1", 
+            "dstRouter": "R1", 
+            "srcRouter": "R2"
+        }, 
+        {
+            "srcPort": "GigabitEthernet0/2", 
+            "dstPort": "GigabitEthernet0/1", 
+            "dstRouter": "R5", 
+            "srcRouter": "R2"
+        }, 
+        {
+            "srcPort": "GigabitEthernet0/1", 
+            "dstPort": "GigabitEthernet0/2", 
+            "dstRouter": "R2", 
+            "srcRouter": "R5"
+        }
+    ]
+}
