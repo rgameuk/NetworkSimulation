@@ -251,16 +251,23 @@ def replaceInterfaces(topology, intChanges):
 		
 def createJSON(topology):
 	jsonTopology = jsonObject([])
+	routerNumber= {}
+	for idx, val in enumerate(topology.routerList):
+		routerNumber[val.hostname] = idx
 	for idx, val in enumerate(topology.routerList):
 		nodeDict = {}
 		nodeDict['deviceType'] = val.capabilities
 		nodeDict['hostname'] = val.hostname
+		nodeDict['deviceNo'] = idx
 		for cdpIDX, cdpVal in enumerate(val.cdp_entries):
 			linksDict = {}
 			linksDict['srcRouter'] = val.hostname
 			linksDict['srcPort'] = cdpVal.srcPort
+			linksDict['source'] = routerNumber[val.hostname]
 			linksDict['dstRouter'] = cdpVal.hostname
+			linksDict['target'] = routerNumber[cdpVal.hostname]
 			linksDict['dstPort'] = cdpVal.dstPort
+			linksDict['value'] = 1
 			jsonTopology.appendLink(linksDict)
 		jsonTopology.appendNode(nodeDict)
 	#jsonOutput = json.dumps(vars(jsonTopology),indent=4)
