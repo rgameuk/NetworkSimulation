@@ -1,87 +1,86 @@
-var width = 1024;
-var height = 768;
+var width = 1200;
+var height = 800;
 var radius = 20;
 
-var color = d3.scale.category10();
+var force = d3.layout.force()   //Defines the elements of forces in the simulation, charges ensure that nodes (routers) do not overlap
+    .charge(-500)   //charge defines how nodes interact with one another, negative charges causes repulsion
+    .linkDistance(200)  //distance between nodes at page load
+    .size([width, height]); //Defines the boundries of physics simulation
 
-var force = d3.layout.force()
-    .charge(-1000)
-    .linkDistance(200)
-    .size([width, height]);
-
-var svg = d3.select("#diagram");
+var svg = d3.select("#diagram"); //Variable to hold the svg element containing the diagram
 
 d3.json("topology.json", function(json) {
+    //function extracts the json topology file and inserts it into physics simulation
     force
         .nodes(json.nodeList)
         .links(json.linksList)
-        .start();
+        .start(); //starts physics to obtain non-overlapping diagram
 
-    //var drag = d3.behavior.drag()
-    //    .on("drag",function(){d3.select(this).attr("cx",d3.event.x).attr("cy",d3.event.y);tick();});
-        //.origin(function(d) { return d; })
-        //.on("drag", dragmove);
-
-    var node_drag = d3.behavior.drag()
+    var node_drag = d3.behavior.drag()  //defines dragging behaviour of nodes
         .on("dragstart", dragstart)
         .on("drag", dragmove)
         .on("dragend", dragend);
 
     function dragstart(d, i) {
-        force.stop() // stops the force auto positioning before you start dragging
+        force.stop() // stops auto positioning before dragging behaviour starts
     }
 
     function dragmove(d, i) {
+        //updates x and y of nodes to match location of mouse
         d.px += d3.event.dx;
         d.py += d3.event.dy;
         d.x += d3.event.dx;
         d.y += d3.event.dy; 
-        tick(); // this is the key to make it work together with updating both px,py,x,y on d !
+        //force.tick(); // Function to update links to match nodes in real-time with drag (Performance hit)
     }
 
     function dragend(d, i) {
-        d.fixed = true; // of course set the node to fixed so the force doesn't include the node in its auto positioning stuff
-        tick();
-
-        force.stop();
+        force.start();
+        updatePosition(); //Updates node location to match mouse stopping location
+        force.stop(); //Turns off forces as no longer required - 
     }
 
-    var links = svg.append("g").selectAll("line.link")
+    var links = svg.append("g").selectAll("line.link")  //Appends links between nodes, denoted by json
         .data(force.links())
         .enter().append("line")
-        .attr("class", "link")
-        .attr("marker-end", "url(#arrow)");
+        .attr("class", "link");
 
-    var nodes = svg.selectAll("circle.node")
-        .data(force.nodes())
-        .enter().append("circle")
-        .attr("class", "node")
+    var nodes = svg.selectAll("g")  //nodes defines a grouping of node 'circle' and hostname
+                    .data(force.nodes(), function(d, i) { return d + i;})   //d + 1 required otherwise node 0 is skipped
+                    .enter()
+                    .append("g");
+
+    nodes.append("circle")  //appends circle to node group
+        //.attr("class", "node")
         .attr("r", radius)
         .style("fill", "steelblue")
-        .call(node_drag);      
+        .call(node_drag);
 
-    nodes.append("text")
+    nodes.append("text")    //appends hostname to node group
+        .attr("x", 1)
+        .attr("dy", ".35em")
+        .attr("text-anchor", "middle")
         .text(function(d) { return d.hostname; });
 
-    force.on("tick", function() {
+    force.on("tick", function() {   //tick function defines what the simulation does over time
         links.attr("x1", function(d) { return d.source.x; })
             .attr("y1", function(d) { return d.source.y; })
             .attr("x2", function(d) { return d.target.x; })
             .attr("y2", function(d) { return d.target.y; });
 
-        nodes.attr("cx", function(d) { return d.x; })
-            .attr("cy", function(d) { return d.y; });
+        nodes.attr("transform", function (d) {
+            return "translate(" + d.x + "," + d.y + ")";
+        });
     });
 
-    function tick() {
+    function updatePosition() { //Manually updates the position of a selected node
         links.attr("x1", function(d) { return d.source.x; })
           .attr("y1", function(d) { return d.source.y; })
           .attr("x2", function(d) { return d.target.x; })
           .attr("y2", function(d) { return d.target.y; });
 
-        nodes.attr("cx", function(d) { return d.x; })
-            .attr("cy", function(d) { return d.y; });
+        nodes.attr("transform", function (d) {
+            return "translate(" + d.x + "," + d.y + ")";
+        });
     };
-
-    
 });
