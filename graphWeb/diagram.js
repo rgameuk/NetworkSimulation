@@ -43,6 +43,7 @@ d3.json("topology.json", function(json) {
     var links = svg.append("g").selectAll("line.link")  //Appends links between nodes, denoted by json
         .data(force.links())
         .enter().append("line")
+        .attr("marker-end", "url(#stub)")   //defined in html
         .attr("class", "link");
 
     var nodes = svg.selectAll("g")  //nodes defines a grouping of node 'circle' and hostname
@@ -60,7 +61,15 @@ d3.json("topology.json", function(json) {
         .attr("x", 1)
         .attr("dy", ".35em")
         .attr("text-anchor", "middle")
+        .style("font-family","sans-serif")
+        .style("fill","white")
+        .attr("pointer-events", "none") //Disables mouse turning to Text mode
         .text(function(d) { return d.hostname; });
+
+    links.append("text")
+        .attr("x", function(d) { return d.source.x + (d.target.x - d.source.x)/2; })
+        .attr("y", function(d) { return d.source.y + (d.target.y - d.source.y)/2; })
+        .text(function(d){ return d.srcPort + " --->    " + d.dstPort});
 
     force.on("tick", function() {   //tick function defines what the simulation does over time
         links.attr("x1", function(d) { return d.source.x; })
