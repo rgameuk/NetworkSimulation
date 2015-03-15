@@ -308,3 +308,9 @@ if __name__ == "__main__":
 	pickle.dump(topology, open("simulationTopology.p", "wb"))
 
 	createJSON(topology)
+
+	routerDict = {}
+	for j, routerVal in enumerate(topology.routerList):
+		routerDict[routerVal.hostname] = routerVal.ipAddress
+	print routerDict
+	pickle.dump(routerDict, open("routerDictionary.p", "wb"))

@@ -1,10 +1,12 @@
 import os
 import subprocess
+import pwd
+import pickle
 
 if __name__ == "__main__":
 	username = 'rancid'
 	password = 'rancid'
-	routerList = {'R1':'172.30.0.1','R2':'172.30.0.2', 'R3':'172.30.0.3'}
+	routerList = pickle.load(open("routerDictionary.p", "rb"))
 	hostsFile = '/etc/hosts'
 
 	for val in routerList:
@@ -21,7 +23,9 @@ if __name__ == "__main__":
 			f.writelines(entry)
 	f.close()
 
-	os.setuid(104)
+	rancidUID = pwd.getpwnam('rancid').pw_uid
+	print rancidUID
+	os.setuid(rancidUID)
 	subprocess.check_output("/var/lib/rancid/bin/rancid-cvs")
 
 	with open('/var/lib/rancid/Discovered/router.db','a') as f:
