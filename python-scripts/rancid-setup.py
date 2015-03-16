@@ -2,19 +2,18 @@ import os
 import subprocess
 import pwd
 import pickle
+import shutil
 
 if __name__ == "__main__":
 	username = 'rancid'
 	password = 'rancid'
 	routerList = pickle.load(open("routerDictionary.p", "rb"))
 	hostsFile = '/etc/hosts'
+	scriptLocation = '/home/rob/NetworkSimulation/python-scripts/config-files'
 
-	for val in routerList:
-		print val
-
-	#with open('/etc/rancid/rancid.conf','a') as f:
-	#	f.write('LIST_OF_GROUPS="Discovered"')
-	#	f.close()
+	with open('/etc/rancid/rancid.conf','a') as f:
+		f.write('LIST_OF_GROUPS="Discovered"')
+		f.close()
 
 	with open('/etc/hosts','a') as f:
 		for key, value in routerList.iteritems():
@@ -48,3 +47,5 @@ if __name__ == "__main__":
 			f.writelines(entry)
 
 	subprocess.check_output("/var/lib/rancid/bin/rancid-run")
+	for key, value in routerList.iteritems():
+		shutil.copy('/var/lib/rancid/Discovered/configs/' + key.lower(), scriptLocation)
