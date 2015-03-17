@@ -47,5 +47,3 @@ if __name__ == "__main__":
 			f.writelines(entry)
 
 	subprocess.check_output("/var/lib/rancid/bin/rancid-run")
-	for key, value in routerList.iteritems():
-		shutil.copy('/var/lib/rancid/Discovered/configs/' + key.lower(), scriptLocation)

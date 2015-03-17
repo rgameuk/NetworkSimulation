@@ -1,5 +1,6 @@
 import pickle
 from ciscoconfparse import CiscoConfParse
+import shutil
 
 class intChangeList(object):
 	#List object to hold router interface changes
@@ -24,9 +25,13 @@ class routerChanges(object):
 		self.newPort = newPort
 
 if __name__ == "__main__":
+	scriptLocation = '/home/rob/NetworkSimulation/python-scripts/config-files'
 	interfaceChanges = intChangeList([])
 	interfaceChanges = pickle.load(open("interfaceChanges.p", "rb"))
 	routerList = pickle.load(open("routerDictionary.p", "rb"))
+
+	for key, value in routerList.iteritems():
+		shutil.copy('/var/lib/rancid/Discovered/configs/' + key.lower(), scriptLocation)
 	
 	for key, value in routerList.iteritems(): 
 		with open('./config-files/' + key.lower(), 'r') as f:
