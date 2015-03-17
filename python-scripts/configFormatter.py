@@ -26,37 +26,49 @@ class routerChanges(object):
 if __name__ == "__main__":
 	interfaceChanges = intChangeList([])
 	interfaceChanges = pickle.load(open("interfaceChanges.p", "rb"))
+	routerList = pickle.load(open("routerDictionary.p", "rb"))
 	
-	with open('./config-files/r2', 'r') as f:
-		config = f.read()
-		f.close()
-	config = config.partition('config-register 0x2102')[2]
-	with open('./config-files/r2.short', 'w') as f:
-		f.write(config)
-	#print config
+	for key, value in routerList.iteritems(): 
+		with open('./config-files/' + key.lower(), 'r') as f:
+			config = f.read()
+			f.close()
+		config = config.partition('config-register 0x2102')[2]
+		with open('./config-files/' + key.lower() + '.short', 'w') as f:
+			f.write(config)
+		#print config
 
-	p = CiscoConfParse('./config-files/r2.short')
+		p = CiscoConfParse('./config-files/' + key.lower() + '.short')
 
-	for i, changeEntry in enumerate(interfaceChanges.changeList):
-		if changeEntry.hostname == 'R2':
-			p.replace_lines(changeEntry.orignalPort, changeEntry.newPort)
+		for i, changeEntry in enumerate(interfaceChanges.changeList):	
+			if changeEntry.hostname == key:
+				if 'Serial' in changeEntry.orignalPort:
+					obj = p.find_objects(changeEntry.orignalPort)
+					print obj
+					if (obj[0].has_child_with(r' bandwidth') == False):
+						obj[0].append_to_family(' bandwidth 2000')
+				if 'FastEthernet' in changeEntry.orignalPort:
+					obj = p.find_objects(changeEntry.orignalPort)
+					print obj
+					if (obj[0].has_child_with(r' bandwidth') == False):
+						obj[0].append_to_family(' bandwidth 100000')
+				p.replace_lines(changeEntry.orignalPort, changeEntry.newPort)
 
-	for obj in p.find_objects(r'^interface Serial'):
-		obj.delete(recurse=True)
+		for obj in p.find_objects(r'^interface Serial'):
+			obj.delete(recurse=True)
 
-	for obj in p.find_objects(r'^interface FastEthernet'):
-		obj.delete(recurse=True)
+		for obj in p.find_objects(r'^interface FastEthernet'):
+			obj.delete(recurse=True)
 
-	for obj in p.find_objects(r'^interface'):
-		obj.delete_children_matching(r'clock rate')
+		for obj in p.find_objects(r'^interface'):
+			obj.delete_children_matching(r'clock rate')
 
-	p.insert_before('interface GigabitEthernet0/1', 'interface GigabitEthernet0/0', exactmatch=True, atomic=False)
-	p.insert_after('interface GigabitEthernet0/0', '!', exactmatch=True, atomic=False)
-	p.insert_after('interface GigabitEthernet0/0', ' no shutdown', exactmatch=True, atomic=False)
-	p.insert_after('interface GigabitEthernet0/0', ' speed auto', exactmatch=True, atomic=False)
-	p.insert_after('interface GigabitEthernet0/0', ' duplex auto', exactmatch=True, atomic=False)
-	p.insert_after('interface GigabitEthernet0/0', ' no ip address', exactmatch=True, atomic=False)
-	p.insert_after('interface GigabitEthernet0/0', '! Configured on launch', exactmatch=True, atomic=False)
-	p.insert_after('interface GigabitEthernet0/0', ' description OOB Management', exactmatch=True, atomic=False)
+		p.insert_before('interface GigabitEthernet0/1', 'interface GigabitEthernet0/0', exactmatch=True, atomic=False)
+		p.insert_after('interface GigabitEthernet0/0', '!', exactmatch=True, atomic=False)
+		p.insert_after('interface GigabitEthernet0/0', ' no shutdown', exactmatch=True, atomic=False)
+		p.insert_after('interface GigabitEthernet0/0', ' speed auto', exactmatch=True, atomic=False)
+		p.insert_after('interface GigabitEthernet0/0', ' duplex auto', exactmatch=True, atomic=False)
+		p.insert_after('interface GigabitEthernet0/0', ' no ip address', exactmatch=True, atomic=False)
+		p.insert_after('interface GigabitEthernet0/0', '! Configured on launch', exactmatch=True, atomic=False)
+		p.insert_after('interface GigabitEthernet0/0', ' description OOB Management', exactmatch=True, atomic=False)
 
-	p.save_as('./config-files/r2.edited')
+		p.save_as('./config-files/' + key.lower() + '.edited')
