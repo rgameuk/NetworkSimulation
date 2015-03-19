@@ -44,7 +44,8 @@ if __name__ == "__main__":
 
 		p = CiscoConfParse('./config-files/' + key.lower() + '.short')
 
-		for i, changeEntry in enumerate(interfaceChanges.changeList):	
+		for i, changeEntry in enumerate(interfaceChanges.changeList):
+			oldPort = changeEntry.orignalPort
 			if changeEntry.hostname == key:
 				if 'Serial' in changeEntry.orignalPort:
 					obj = p.find_objects(changeEntry.orignalPort)
@@ -58,10 +59,11 @@ if __name__ == "__main__":
 						obj[0].append_to_family(' bandwidth 100000')
 				p.replace_lines(changeEntry.orignalPort, changeEntry.newPort)
 
-		for obj in p.find_objects(r'^interface Serial'):
+
+		for obj in p.find_objects(r'Serial'):
 			obj.delete(recurse=True)
 
-		for obj in p.find_objects(r'^interface FastEthernet'):
+		for obj in p.find_objects(r'FastEthernet'):
 			obj.delete(recurse=True)
 
 		for obj in p.find_objects(r'^interface'):
