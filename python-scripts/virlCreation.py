@@ -1,6 +1,7 @@
 import pickle
 from lxml import etree
 import random
+import collections
 
 class routerList(object):
 	def __init__(self, routerList):
@@ -48,7 +49,7 @@ class deviceIDs(object):
 	def __init__(self, hostname):
 		self.device = ''
 		self.deviceID = ''
-		self.ports = {}
+		self.ports = collections.OrderedDict()
 
 	def addDevice(self, hostname, id):
 		self.device = hostname
@@ -239,8 +240,8 @@ if __name__ == "__main__":
 					topologyConnections.addConnection(newConnectionStore)
 
 
-	#output = etree.tostring(topology, pretty_print = True)
-	#with open('topology.virl', 'w') as f:
-	#	f.write(output)
-	#	f.close()
-	#print output
+	output = etree.tostring(topology, pretty_print = True)
+	with open('topology.virl', 'w') as f:
+		f.write(output)
+		f.close()
+	print output
