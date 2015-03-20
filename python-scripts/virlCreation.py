@@ -154,12 +154,13 @@ if __name__ == "__main__":
 				interfaceEntry.attrib['id'] = str(intIndex)
 				interfaceEntry.attrib['name'] = cdpVal.srcPort
 				newNode.append(interfaceEntry)
+				intIndex += 1
 		topology.append(newNode)
 		routerIndexes.addDevice(routerIndex)
 
 	for routerIDX, routerVal in enumerate(deviceTopology.routerList):
+		#IDs IN THE CONNECTIONS ARE THE RELATIVE DEFINITION
 		for cdpIDX, cdpVal in enumerate(routerVal.cdp_entries):
-			connectionFound = False
 			if len(topologyConnections.connections) == 0:
 				print 'first connection'
 				#add first connection to enable below for loop to run
@@ -173,12 +174,21 @@ if __name__ == "__main__":
 				dstDevID = ''
 				dstIntID = ''
 				for idIDX, idVal in enumerate(routerIndexes.deviceList):
+					#
 					if(idVal.device == routerVal.hostname):
-						srcDevID = str(idVal.deviceID)
-						srcIntID = str(idVal.ports[cdpVal.srcPort])
+						srcDevID = str(idIDX+1)
+						intIndex = 1
+						for key in idVal.ports:
+							if key == cdpVal.srcPort:
+								srcIntID = str(intIndex)
+							intIndex+=1
 					elif(idVal.device == cdpVal.hostname):
-						dstDevID = str(idVal.deviceID)
-						dstIntID = str(idVal.ports[cdpVal.dstPort])
+						dstDevID = str(idIDX+1)
+						intIndex = 1
+						for key in idVal.ports:
+							if key == cdpVal.dstPort:
+								dstIntID = str(intIndex)
+							intIndex+=1
 				connectionString+=dstDevID + ']/virl:interface[' + dstIntID + ']'
 				newConnection.attrib['dst'] = connectionString 
 				connectionString = '/virl:topology/virl:node['
@@ -199,15 +209,26 @@ if __name__ == "__main__":
 							#print connVal.sourceDevice + connVal.sourceInterface + connVal.destDevice + connVal.destInterface
 				if connectionFound == False:
 					print 'New connection'
+					print 'Connect ' + routerVal.hostname + ' int ' + cdpVal.srcPort +' to ' + cdpVal.hostname + ' int ' + cdpVal.dstPort
 					newConnection = etree.Element('connection')
 					print routerVal.hostname + cdpVal.srcPort + cdpVal.hostname + cdpVal.dstPort
+					newConnectionStore = deviceConnection(routerVal.hostname)
+					newConnectionStore.addConnection(cdpVal.srcPort, cdpVal.hostname, cdpVal.dstPort)
 					for idIDX, idVal in enumerate(routerIndexes.deviceList):
 						if(idVal.device == routerVal.hostname):
-							srcDevID = str(idVal.deviceID)
-							srcIntID = str(idVal.ports[cdpVal.srcPort])
+							srcDevID = str(idIDX+1)
+							intIndex = 1
+							for key in idVal.ports:
+								if key == cdpVal.srcPort:
+									srcIntID = str(intIndex)
+								intIndex+=1
 						elif(idVal.device == cdpVal.hostname):
-							dstDevID = str(idVal.deviceID)
-							dstIntID = str(idVal.ports[cdpVal.dstPort])
+							dstDevID = str(idIDX+1)
+							intIndex = 1
+							for key in idVal.ports:
+								if key == cdpVal.dstPort:
+									dstIntID = str(intIndex)
+								intIndex+=1
 					connectionString = '/virl:topology/virl:node['
 					connectionString+=dstDevID + ']/virl:interface[' + dstIntID + ']'
 					newConnection.attrib['dst'] = connectionString 
@@ -218,8 +239,8 @@ if __name__ == "__main__":
 					topologyConnections.addConnection(newConnectionStore)
 
 
-	output = etree.tostring(topology, pretty_print = True)
-	with open('topology.virl', 'w') as f:
-		f.write(output)
-		f.close()
-	print output
+	#output = etree.tostring(topology, pretty_print = True)
+	#with open('topology.virl', 'w') as f:
+	#	f.write(output)
+	#	f.close()
+	#print output
