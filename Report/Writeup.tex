@@ -24,7 +24,7 @@
 \setlength{\textwidth}{6.25in}
 \graphicspath{images/}
 \begin{document}
-\title{An Investigation into Network Simulation as a Testing Platform}
+\title{An Investigation into Network Emulation as a Testing Platform}
 \author{Robert Game}
 \date{}
 \maketitle
@@ -39,21 +39,26 @@ In recent years technology for large enterprise has advanced significantly due t
 
 \chapter{Introduction}
 
-During my time out on an industrial placement I observed one issue that Network Operations teams face when raising and implementing Network Configuration changes. In a large scale infrastructure a development environment is usually created for testing changes on Server or Application environments, however the need for real traffic and the cost of dedicated hardware makes this difficult in the Network Infrastructure. The use of a physical lab takes time to set up and teams usually do not use them unless they are planning for large scale infrastructure changes.
+In recent years the use of a second, entirely separate infrastructure has been used to develop tools, test changes and simulate outages of IT Systems. In a large scale infrastructure these environments are usually created for testing changes on Server or Application environments, however the need for real traffic and the cost of dedicated hardware makes this difficult in the Network Infrastructure. The use of a physical lab takes time to set up and teams usually do not use them unless they are planning for large scale infrastructure changes.
 
-This project will aim to create a tool intended for use in a Network Operations team in large scale enterprise. This tool will aim to pull together different aspects of Network Management tools and use information available to create a network model inside of the Cisco VIRL development environment. Using this model the Network Operations team can test environment changes on a model of their own network. Using data gathered from this simulation and the changes observed during any configuration edits the tool will then aim to create a piece of testing evidence which can be used to support any Change Management required on the infrastructure.
+This project will aim to create a tool intended for use in a Network Operations team in large scale enterprise. This tool will aim to pull together different aspects of Network Management tools and use information available to create a network model inside of the Cisco VIRL emulated environment. Using this model the Network Operations team can test environment changes on a model of their own network. Using data gathered from this simulation and the changes observed during any configuration edits the tool will then aim to create a piece of testing evidence which can be used to support any Change Management required on the infrastructure.
 
-Large organisations, which are the primary target of the proposed tool, will often have Configuration Repositories and Configuration Management Databases (CMDB) that store relevant configurations and server locations. The proposed tool will combine network simulation technology with these external data sources to allow a Network Administrator to mimic changes to a production network and observe the impact that they have on data flow and connectivity. In particular the tool will generate testing evidence as proof of any impact (or lack of) when raising a network change.
+Large organisations, which are the primary target of the proposed tool, will often have Configuration Repositories and Configuration Management Databases (CMDB) that store relevant configurations and server locations. Alternatively, a networks team may want to generate a emulated version of an unknown network in order to understand its topology and configuration. The proposed tool will combine network emulation technology with these data sources to allow a Network Administrator to mimic changes to a production network and observe the impact that they have on data flow and connectivity. In particular the tool will generate testing evidence as proof of any impact (or lack of) when raising a network change.
+
+The proposed tool provides value to a Network Engineer as it allows them to be more flexible in their network testing. With the proposed solution an Engineer will no longer need to create a physical clone of the network in a lab environment, nor will the need rely on outdated network documentation. A emulated copy of the network can be produced from a node-edge representation of the topology along with the configurations for devices. This will save the Engineer time in the planning of changes as well as allowing them to implement the changes in a non-production environment, in addition to the time savings an Engineer will also be able to produce testing evidence which can be used for Change Management purposes.
 
 \section{Scope}
 
-This solution is targeted at medium to large enterprise which have a considerable routing setup. For example a global or regional backbone which connects multiple branch offices to a Headquarters. My tool will support both Interior and Exterior Routing protocols. In particular I am using my experience in the finance industry where Network Operations teams also work in an ISP role connecting through EBGP as well as traditional OSPF neighbouring. This will create a tool that is scalable to the users needs. 
+This solution is targeted at medium to large enterprise which have a considerable routing set-up For example a global or regional backbone which connects multiple branch offices to a Headquarters. My tool will support both Interior and Exterior Routing protocols. In particular I am using my experience in the finance industry where Network Operations teams also work in an ISP role connecting through EBGP as well as traditional interior Distance Vector or Link State routing. This will create a tool that is scalable to the users needs, allowing a user to create a emulated copy of their local network through dynamic device discovery or a larger scale Engineer to produce an emulated version of a section of their network using Configuration Repositories and Network Diagrams.
 
 \section{Objectives}
 \begin{itemize}
 \item{Create a tool which can take information from existing resources and create a working model of the Network Infrastructure within Cisco VIRL.}
-\item{Create a modular system that can take input from a variety of network resources.}
+\item{Extend the tool so that it can dynamically discover new network devices.}
 \item{Facilitate the creation of a simulation within five minutes of starting the tool.}
+\item{Produce a visual representation of the network for the user to view}
+\item{Allow the user to interact with the emulation through traditional methods such as SSH or telnet}
+\item{Investigate new methods for an Engineer to interact with a network}
 \item{The production of detailed testing evidence during the simulation, such as neighbour tables, routing entries or link statuses.}
 \end{itemize}
 
@@ -63,7 +68,7 @@ This solution is targeted at medium to large enterprise which have a considerabl
 
 Full network simulation is a relatively new concept which has been embraced recently due to the uptake of hypervisors and virtualisation of Operating Systems. With regards to Network Simulation there has been a slowed uptake due to the majority market share that Cisco has and their limited offerings in the virtualisation market.
 
-Third party vendors such as HP and Huawei have offered simulated versions of their network equipment. These simulations tend to focus on creating a learning environment for their tools and as such do not perform adequately as simulated ‘real world’ devices. These devices tend to work as a simulator in that they mimic the behaviour of a network, and not the devices. For example, the software will decide to build an OSPF relation should the required fields match on the devices. In contrast, a simulator (and real device) will build the relationship through a series of negotiations and packet transfers. As a result these simulators cannot be used reliably as network testing tool as the behaviour is predefined and may not be a true reflection of real hardware.
+Other network device vendors such as HP and Huawei have offered simulated versions of their network equipment. These simulations tend to focus on creating a learning environment for their tools and as such do not perform adequately as simulated ‘real world’ devices. These devices tend to work as a simulator in that they mimic the behaviour of a network, and not the devices. For example, the software will decide to build an OSPF relation should the required fields match on the devices. In contrast, a simulator (and real device) will build the relationship through a series of negotiations and packet transfers. As a result these simulators cannot be used reliably as network testing tool as the behaviour is predefined and may not be a true reflection of real hardware.
 
 The Open Source community has played a role in this field, a project named GNS3 was started in 2006 which aimed to create  unified tool to pull together hardware simulation and topology design into one UI. From this they created GNS3, a front end which allowed users to create a topology in a ‘drag and drop’ style and then start equipment as required. GNS3 is intended to be a multi-vendor tool but is particularly used for Cisco simulations. Using a hypervisor called Dynamips the tool can create a VM of a Cisco router which can be interconnected to create a real topology. In addition to this, GNS3 can be adapted as a network emulator, which enables a user to connect their simulated topology to their physical network.
 
@@ -77,7 +82,7 @@ From the review of current solutions there has not been a tool which can generat
 
 The tool will be implemented using Cisco VIRL as a simulation engine, VIRL is pre-release software which forms the back end for a future Cisco product called Cisco Modelling Labs. This tool provides simulation using a new version of Cisco’s IOS and NexusOS, tailor made for virtualisation and fast deployment.
 
-VIRL is a relatively new offering from Cisco, and is their first offering of software specifically created to support virtual copies of their routers. It was first released to the public in November 2014 as a standalone client installed on a local machine. However for the purposes of this Project I have been fortunate enough to have access to the University's own server-based version of VIRL. This provides support for up to 200 instances in comparison to the Personal Edition which is capped at 15 instances. This has enabled me to take advantage of extra features such as Servers which can be attached to a network topology, providing added features such as network analysis and traffic creation.
+VIRL is a relatively new offering from Cisco, and is their first offering of software specifically created to support virtual copies of their routers. It was first released to the public in November 2014 as a stand-alone client installed on a local machine. However for the purposes of this Project I have been fortunate enough to have access to the University's own server-based version of VIRL. This provides support for up to 200 instances in comparison to the Personal Edition which is capped at 15 instances. This has enabled me to take advantage of extra features such as Servers which can be attached to a network topology, providing added features such as network analysis and traffic creation.
 
 Connection to the VIRL Server is provided though an Eclipse-based front-end called VM Maestro. This front-end provides an sandbox to build network topologies using the provided images of Cisco hardware within VIRL. For this project I will be concentrating on the use of Cisco's IOSv image, an image of the traditional IOS but adapted for use with a hypervisor. This allows the image to be run on a server without any dedicated ASICs. VIRL can then interconnect these devices provide connectivity and traffic. Using these connections the Routers can use routing protocols such as OSPF, EIGRP or BGP in order to create routing tables - this enables the user to simulate the Layer 3 functionality of their topology.
 
@@ -87,43 +92,48 @@ In addition to the features provided for functionality within VM Maestro, there 
 
 Server support within VIRL is provided through pre-defined image varying in system requirements. The default images are Ubuntu but other images can be imported if required. These servers can be connected to the internet in order to customise them for to the users needs, an example would be installing an SNMP Server in order to poll the routers for information.
 
-\pagebreak
-
-\chapter{System Overview}
+\chapter{Proposed Tool - Network Emulator}
 
 \section{High-Level Design}
 
-\begin{itemize}
-\item{Data Retrieval (Input):}
-  \begin{itemize}
-    \item{Data will be gathered from the three identified. Within an Enterprise these external tools will be widely used in order to gather information for Network Management.}
-      \begin{itemize}
-        \item{Topology Designs - Whether in a Visio format or recorded through other means they will be used in order to create a visual representation of the network in question}
-        \item{Router Configuration Store - A central repository of Router configurations which will be used to make the nodes themselves. The router configuration holds information such as connection types, encapsulation modes and routing protocol setups. The design will aim to use this information to reflect the physical routers in the simulated topology.}
-        \item{Configuration Management Database - A general use infrastructure tool within large enterprise. These are used to define infrastructure all the way up the network stack. As an example it will map a location in a datacenter to it's server. A server to it's Operating System. An Operating System to it's Application instances. An Application Instance to it's Application. At its core it can also map a server to it's network port, from this we can work out where an application has dependencies and thus where the traffic will flow in standard operation. The tool will aim to use this information to model real-world scenarios on Application data}
-      \end{itemize}
-  \end{itemize}
-  \item{VIRL File Generation}
-  \begin{itemize}
-    \item{From the data gained from above, my tool will create a .virl file which defines the topology and configurations in Cisco’s VIRL Simulations. This can define topology designs, interface connections and router configurations. Once this file has been generated it can be passed to Cisco VIRL to build the simulation.}
-  \end{itemize}
-  \item{Simulation in VIRL}
-  \begin{itemize}
-    \item{VIRL offers the flexibility to make configuration changes on demand. In addition to this link downs and hardware failures can be simulated within the tool. From VIRL the user will be able make any changes they wish.}
-  \end{itemize}
-  \item{Testing Evidence collection}
-  \begin{itemize}
-    \item{The proposed tool will utilise features such as Netflow, SNMP and Syslog in order to gather information from the simulation. From these flows the tool will create an evidence report which can be used in order to demonstrate any impact (or lack of) on the network infrastructure.}
-  \end{itemize}
-\end{itemize}
+At the highest level the proposed tool will provide an Engineer with an emulated version of their physical network for use as a test bed for changes or disaster recovery simulations. At a more granular level the tool is split into four distinct sections: Network Discovery, Network Representation, Simulation and Network Interaction. This chapter will focus on these sections from a design perspective, investigating how they can be implemented and which technologies can support their creation. Figure \# below shows these sections further broken down into separate sub-tasks.
 
-\section{Work Breakdown}
-
-When considering the development approach to this tool I have decided on four key development areas. First, the initial device discovery and integration with existing configuration tools, second, the creation of the .VIRL file and ensuring it adequately defines the network. Third, the integration and simulation of the network within VIRL and finally the collection of simulation data to create testing evidence. This process has been broken down in the below diagram:
+\textit{Todo: Create a flowchart for the system}
 
 \begin{center}
-\includegraphics[width=0.8\textwidth]{Work-Breakdown.png}
+\includegraphics[width=1\textwidth]{Work-Breakdown.png}
 \end{center}
+
+\section{Network Creation}
+
+An emulated network can be created using two distinct inputs, the first is a copy of the configuration files for all devices in the network which will determine how the components interact with one another. For example, a configuration file can provide the settings for a routing protocol such as OSPF, specifying information required to exchange routes with other devices and choosing the networks they wish to advertise to their peers. The second input is a form of detailing the physical layout of the network, representing the devices as nodes and their inter-device links as edges. Representing this data in a format that is easily readable by a program allows the proposed tool to create emulation with all the interfaces and connections of the physical network, an accurate reproduction of these components ensures that the emulation will behave in the same way as it's physical counterpart.
+\\
+\textit{Todo: Extracts of Config files and visio/json}
+\\
+The proposed tool will provide two options for creating an emulated network. First allowing a user to create a version of a well-known network by allowing the input of already existing configuration backups and topology definitions from tools such as Rancid or Opsware. Alternatively, the user will be able to create an emulated version of their local network by using the tool to discover, map and backup their local devices before passing the information on to the simulation element.
+
+\subsection{Explicit Input:}
+
+A well-maintained network will have two components of management, the first is a detailed collection of network diagrams detailing the positions of routers and switches, the interfaces used for these links and any IP addressing these connections have. Tools used for the creation of these documents are programs such as Microsoft Visio or yED, these tools enable a Network Engineer to draw their diagrams and save them in a user-friendly visual format. A further extension of these tools allows the saving of a topology in a programmer-friendly format such as json or xml, the proposed tool will investigate using this data format for representing the emulated network. Once the topology of the network has been created it has no defined behaviour.
+\\
+The second management process is a backup tool of network device configurations, large enterprise keep a backup of all router configurations as a precaution in case of unintended changes or hardware failure. If given access to these backups the proposed tool will be able to create an emulated network whose behaviour is defined by these files.
+
+\subsection{Network Discovery}
+
+ 
+
+Topology Designs - Whether in a Vision format or recorded through other means they will be used in order to create a visual representation of the network in question
+
+Router Configuration Store - A central repository of Router configurations which will be used to make the nodes themselves. The router configuration holds information such as connection types, encapsulation modes and routing protocol set-ups The design will aim to use this information to reflect the physical routers in the simulated topology.
+      
+VIRL File Generation
+From the data gained from above, my tool will create a .virl file which defines the topology and configurations in Cisco’s VIRL Simulations. This can define topology designs, interface connections and router configurations. Once this file has been generated it can be passed to Cisco VIRL to build the simulation.
+
+Simulation in VIRL
+VIRL offers the flexibility to make configuration changes on demand. In addition to this link downs and hardware failures can be simulated within the tool. From VIRL the user will be able make any changes they wish.
+
+Testing Evidence collection
+The proposed tool will utilise features such as Netflow, SNMP and Syslog in order to gather information from the simulation. From these flows the tool will create an evidence report which can be used in order to demonstrate any impact (or lack of) on the network infrastructure.
 
 \section{Requirements}
 
@@ -162,7 +172,7 @@ The creation of these systems needs to be done in a real-world environment, howe
 
 \textit{To do: Further information on SNMP agent used on the 'Real' equipment}
 
-\chapter{System Design}
+\chapter{Implementation}
 
 \section{Router Discovery:}
 
@@ -170,7 +180,7 @@ The creation of these systems needs to be done in a real-world environment, howe
 \includegraphics[width=0.8\textwidth]{Lab-Design.png}
 \end{center}
 
-A key feature of the a simulation tool is the ability to replicate a 'Real-world' network in emulated space. In order to gather the information required for this feature an extra toolset for Network Discovery has been created. This allows a user to discover devices on the network and extract interface information and router configurations in order to build an emulated instance of the network.
+A key feature of the a simulation tool is the ability to replicate a 'Real-world' network in emulated space. In order to gather the information required for this feature an extra tool set for Network Discovery has been created. This allows a user to discover devices on the network and extract interface information and router configurations in order to build an emulated instance of the network.
 
 For the development of this Router Discovery tool the above topology was created and used. As explained earlier this is implemented within GNS3 to utilise it's simulation of real IOS images. The above shows a Topology I have created as a use-case for simulation testing, however in order to add the Network Discovery tool I have included an Ubuntu 14.04 server and a connection to the Internet (Cloud 1).
 
@@ -245,7 +255,7 @@ IOSv instances, the focus of this tool support SNMP just as a physical router wo
 
 \subsection{Netflow}
 
-Cisco Flexible Netflow is supported by Cisco IOSv and gives a more detailed view of traffic across router interfaces. Configuring each IOSv instance as a Flow Exporter and adding an collectore such as Cacti will provide a detailed breakdown of traffic based on it's Layer 3 and 4 information. This adds further granularity to the testing evidence that is created.
+Cisco Flexible Netflow is supported by Cisco IOSv and gives a more detailed view of traffic across router interfaces. Configuring each IOSv instance as a Flow Exporter and adding an collector such as Cacti will provide a detailed breakdown of traffic based on it's Layer 3 and 4 information. This adds further granularity to the testing evidence that is created.
 
 \subsection{Packet Capture}
 
