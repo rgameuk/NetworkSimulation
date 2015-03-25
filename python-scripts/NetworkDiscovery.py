@@ -4,6 +4,7 @@ import string
 import re
 import cPickle as pickle
 import json
+import pysftp
 
 class routerList(object):
 	def __init__(self, routerList):
@@ -314,3 +315,6 @@ if __name__ == "__main__":
 		routerDict[routerVal.hostname] = routerVal.ipAddress
 	print routerDict
 	pickle.dump(routerDict, open("routerDictionary.p", "wb"))
+	with pysftp.Connection('178.62.24.178', username='sftp', private_key='/home/rob/.ssh/id_rsa') as sftp:
+		with sftp.cd('json-files'):
+			sftp.put('topology.json')
