@@ -2,6 +2,7 @@ import pickle
 from lxml import etree
 import random
 import collections
+import pysftp
 
 class routerList(object):
 	def __init__(self, routerList):
@@ -245,3 +246,7 @@ if __name__ == "__main__":
 		f.write(output)
 		f.close()
 	print output
+
+	with pysftp.Connection('178.62.24.178', username='sftp', private_key='/home/rob/.ssh/id_rsa') as sftp:
+		with sftp.cd('virl-files'):
+			sftp.put('topology.virl')
