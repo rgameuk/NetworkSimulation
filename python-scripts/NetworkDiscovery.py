@@ -239,6 +239,7 @@ def formatInterfaces(topology):
 				#print intChanges.changeList[0].hostname
 				print routerIntChanges.hostname + " was: " + routerIntChanges.orignalPort + " now: " + routerIntChanges.newPort
 				localChanges[intVAL] = newInterface
+		pickle.dump(intChanges, open("interfaceChanges.p", "wb"))
 		replaceInterfaces(topology, intChanges)
 
 def replaceInterfaces(topology, intChanges):
