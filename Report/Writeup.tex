@@ -108,7 +108,7 @@ Server support within VIRL is provided through pre-defined image varying in syst
 
 \section{High-Level Design}
 
-At the highest level the proposed tool will provide an Engineer with an emulated version of their physical network for use as a test bed for changes or disaster recovery simulations. At a more granular level the tool is split into four distinct sections: Network Discovery, Network Representation, Simulation and Network Interaction. This chapter will focus on these sections from a design perspective, investigating how they can be implemented and which technologies can support their creation. Figure \# below shows these sections further broken down into separate sub-tasks.
+At the highest level the proposed tool will provide an Engineer with an emulated version of their physical network for use as a test bed for changes or disaster recovery simulations. At a more granular level the tool is split into four distinct sections: Network Discovery, Network Representation, Emulation and Network Interaction. This chapter will focus on these sections from a design perspective, investigating how they can be implemented and which technologies can support their creation. Figure \# below shows these sections further broken down into separate sub-tasks.
 
 \textit{Todo: Create a flowchart for the system}
 
@@ -147,6 +147,7 @@ Network configuration files can be extracted from running devices in multiple wa
 
 Although the VIRL system provides a topology view for running simulations, I am not intending on using this as part of the proposed tool. Instead, I will investigate methods of displaying a network using the information gathered in the Network Discovery section. I aim to investigate tools such as yED which allows the use of extensions to interact with network drawings. For example, when a topology has been drawn and displayed, it may carry additional attributes such as it's IP Address, using this information the graphing software can be extended to implement features such as a terminal emulator for direct access to a device, or an API for sending defined commands to an emulated network. In addition to the interaction with the emulation, I will also investigate methods of representing feedback from devices. This information can be displayed directly on the visual topology with labels such as the status of a network connection and it's current throughput. This idea can be extended and the use of colour on a network link can show the forwarding path for a destination IP address from it's source. Any changes made to the routing configuration during this time will be reflected by the colour of the links and any impact of the forwarding tables for a destination can be seen.
 \\
+\\
 In addition to the feedback required from a visual representation of a network, there also needs to be a level of interactivity with the network view. A topology can be viewed as it's physical layout but it may have other configurations underneath this layer such as Autonomous Systems, Routing Areas or Redundancy Pairs. This information should be viewable by changing a filter on the network representation as it gives a more granular view on how the network components interact with one another. Adding these extra filters will enable a Network Engineer to view the impact of planned changes on additional aspects of the network which may not have been considered previously.
 
 \section{Network Emulation}
@@ -154,18 +155,16 @@ In addition to the feedback required from a visual representation of a network, 
 The proposed tool will use Cisco's Virtual Internet Routing Lab (VIRL) as it's platform for simulation, this was chosen as it provides a full Cisco IOSv image for network components which can scale more efficiently that other simulation platforms. In the proposed tool VIRL will be used as a back-end technology and the proposed tool will not make use of the Eclipse-based VM Maestro interface. The User can interact with devices by using SSH to connect to a jumphost which will provide access to the components using the management network which VIRL creates. 
 \\
 \\
-In order to utilise VIRL to its fullest potential the proposed tool will connect to VIRL using it's defined REST API. From initial research it is understood that a simulation can be created by creating a request to the VIRL server and including a defined .virl file. Upon receiving this file the VIRL host will create a simulation based on the on the topology defined in the file. Information about a simulation can also be obtained by making a separate request to the server for a list of running simulations. The proposed tool will make use of both of these 
-      
-VIRL File Generation
-From the data gained from above, my tool will create a .virl file which defines the topology and configurations in Cisco’s VIRL Simulations. This can define topology designs, interface connections and router configurations. Once this file has been generated it can be passed to Cisco VIRL to build the simulation.
+In order to utilise VIRL to its fullest potential the proposed tool will connect to VIRL using it's defined REST API. From initial research it is understood that a simulation can be created by creating a request to the VIRL server and including a defined .virl file. Upon receiving this file the VIRL host will create a simulation based on the on the topology defined in the file. Information about a simulation can also be obtained by making a separate request to the server for a list of running simulations. The proposed tool will make use of both of these features and allow the server to create an emulation, gather information about the emulated network and interact with the network.
 
-Simulation in VIRL
-VIRL offers the flexibility to make configuration changes on demand. In addition to this link downs and hardware failures can be simulated within the tool. From VIRL the user will be able make any changes they wish.
+\section{Interaction}
 
-Testing Evidence collection
-The proposed tool will utilise features such as Netflow, SNMP and Syslog in order to gather information from the simulation. From these flows the tool will create an evidence report which can be used in order to demonstrate any impact (or lack of) on the network infrastructure.
+The tool will allow a user to interact with their emulated network in a variety of ways. A traditional terminal access will be provided through the web simulation as this is the primary way that an Engineer will interact with and make changes to a real network. In addition to terminal access, the tool will also investigate non-traditional methods of interaction, one benefit of producing a network diagram is the possibility of directly interacting with components in the topology, making changes such as shutting interfaces down or rebooting hardware.
+\\
+\\
+Interaction with network components will provide feedback to the user through the graphical interface provided in the 'Network Representation' section. This section of the tool will display the network dynamically, using information gained from devices such as the forwarding table or bandwidth usage on a link. This information will be interpreted by the graphing software and will provide visual feedback of a network change, such as using coloured links to show a forwarding path through a network.
 
-\section{Requirements}
+\section{Network Requirements}
 
 \textit{Todo: Need to formally document these}
 
