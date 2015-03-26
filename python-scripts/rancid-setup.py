@@ -3,6 +3,7 @@ import subprocess
 import pwd
 import pickle
 import shutil
+import getpass
 
 if __name__ == "__main__":
 	username = 'rancid'
@@ -24,7 +25,14 @@ if __name__ == "__main__":
 
 	rancidUID = pwd.getpwnam('rancid').pw_uid
 	print rancidUID
-	os.setuid(rancidUID)
+	if os.getuid() == 0:
+		os.setuid(rancidUID)
+		print 'User set to ' + str(rancidUID)
+	else:
+		print 'Script must be run as root'
+	username = getpass.getuser()
+	print os.getuid()
+
 	subprocess.check_output("/var/lib/rancid/bin/rancid-cvs")
 
 	with open('/var/lib/rancid/Discovered/router.db','a') as f:
@@ -46,4 +54,5 @@ if __name__ == "__main__":
 			entry = "add password " + key.lower() + " {rancid} {rancid}" + "\n" + "\n"
 			f.writelines(entry)
 
+	print os.getuid()
 	subprocess.check_output("/var/lib/rancid/bin/rancid-run")
