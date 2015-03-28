@@ -5,6 +5,7 @@ import re
 import cPickle as pickle
 import json
 import pysftp
+import operator
 
 class routerList(object):
 	def __init__(self, routerList):
@@ -239,6 +240,8 @@ def formatInterfaces(topology):
 				#print intChanges.changeList[0].hostname
 				print routerIntChanges.hostname + " was: " + routerIntChanges.orignalPort + " now: " + routerIntChanges.newPort
 				localChanges[intVAL] = newInterface
+		intChanges.changeList.sort(key=operator.attrgetter('orignalPort'))
+		print intChanges
 		pickle.dump(intChanges, open("interfaceChanges.p", "wb"))
 		replaceInterfaces(topology, intChanges)
 
@@ -250,7 +253,11 @@ def replaceInterfaces(topology, intChanges):
 					topology.routerList[j].cdp_entries[k].srcPort = intChanges.changeList[i].newPort
 				elif val.hostname == intChanges.changeList[i].hostname and val.dstPort == intChanges.changeList[i].orignalPort:
 					topology.routerList[j].cdp_entries[k].dstPort = intChanges.changeList[i].newPort
-		
+
+def sortCDPInterfaces(topology):
+	for routerIDX, routerVal in enumerate(topology.routerList):
+		routerVal.cdp_entries.sort(key=operator.attrgetter('srcPort'))
+	
 def createJSON(topology):
 	jsonTopology = jsonObject([])
 	routerNumber= {}
@@ -307,6 +314,7 @@ if __name__ == "__main__":
 	pickle.dump(topology, open("topologyData.p", "wb"))
 
 	formatInterfaces(topology)
+	sortCDPInterfaces(topology)
 	pickle.dump(topology, open("simulationTopology.p", "wb"))
 
 	createJSON(topology)
