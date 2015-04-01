@@ -401,10 +401,8 @@ if __name__ == "__main__":
 	updateRouters(baseRouter)
 	pickle.dump(topology, open("topologyData.p", "wb"))
 	formatInterfaces(topology)
-	sortCDPInterfaces(topology)
-	
 	findSwitches(topology)
-
+	sortCDPInterfaces(topology)
 	for routerIDX, routerVal in enumerate(topology.routerList):
 		print routerVal.hostname
 		for cdpIDX, cdpVal in enumerate(routerVal.cdp_entries):
