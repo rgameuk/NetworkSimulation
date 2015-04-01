@@ -330,7 +330,14 @@ def findSwitches(topology):
 				switchCDP.addSrcPort(switchHostname)
 				switchCDP.addDstPort(updateVal.switchport)
 				newSwitch.addCdpEntry(copy.copy(switchCDP))
-		updateSwitchLinks(topology, switchUpdates, switchHostname)
+			updateSwitchLinks(topology, switchUpdates, switchHostname)
+			switchExists = False
+			for deviceIDX, deviceVal in enumerate(topology.routerList):
+				if deviceVal.hostname == switchHostname:
+					switchExists = True
+			if switchExists == False:
+				topology.addRouter(newSwitch)
+		
 
 def updateSwitchLinks(topology, switchUpdates, switchHostname):
 	print 'Called'
@@ -407,7 +414,8 @@ if __name__ == "__main__":
 	createJSON(topology)
 	routerDict = {}
 	for j, routerVal in enumerate(topology.routerList):
-		routerDict[routerVal.hostname] = routerVal.ipAddress
+		if routerVal.capabilities == 'Router':
+			routerDict[routerVal.hostname] = routerVal.ipAddress
 	print routerDict
 	pickle.dump(routerDict, open("routerDictionary.p", "wb"))
 	with pysftp.Connection('178.62.24.178', username='sftp', private_key='/home/rob/.ssh/id_rsa') as sftp:
