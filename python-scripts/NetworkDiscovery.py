@@ -7,6 +7,7 @@ import json
 import pysftp
 import operator
 import collections
+import copy
 
 class routerList(object):
 	def __init__(self, routerList):
@@ -88,6 +89,23 @@ class jsonObject(object):
 		self.linksList.append(newLink)
 	def appendNode(self, newNode):
 		self.nodeList.append(newNode)
+
+class switchUpdate(object):
+	def __init__(self, hostname):
+		self.switchHostname = ''
+		self.dstHostname = ''
+		self.switchport = ''
+
+	def addswitchHostname(self, hostname):
+		self.switchHostname = hostname
+	def adddstHostname(self, hostname):
+		self.dstHostname = hostname
+	def addSwitchport(self, updatePort):
+		self.switchport = updatePort
+	def clear(self):
+		self.switchHostname = ''
+		self.dstHostname = ''
+		self.switchport = ''
 
 def getLocalCDPInfo(baseRouter):
 	cdpdiscovery = subprocess.check_output(["cdpr", "-d", "eth0"])
@@ -271,6 +289,7 @@ def sortCDPInterfaces(topology):
 
 def findSwitches(topology):
 	print 'Looking for switches'
+	switchList = []
 	for routerIDX, routerVal in enumerate(topology.routerList):
 		seen = set()
 		uniq = []
@@ -282,20 +301,52 @@ def findSwitches(topology):
 			else:
 				dupes.append(cdpVal.srcPort)
 		set(dupes)
-		createSwitches(topology, routerIDX, dupes)
 
-def createSwitches(topology, routerIndex, dupes):
-	print topology.routerList[routerIndex].hostname
-	for cdpIDX, cdpVal in enumerate(topology.routerList[routerIndex].cdp_entries):
-		if cdpVal.srcPort in dupes:
-			#print 'Delete ' + cdpVal.srcPort
-			topology.routerList[routerIndex].removeCDPEntry(cdpVal.srcPort)
-	for itemIDX, itemVal in enumerate(dupes):
-		switchCDP = cdpEntry([])
-		switchCDP.addHostname('LAN')
-		switchCDP.addSrcPort(itemVal)
-		switchCDP.addDstPort(str(itemIDX))
-		topology.routerList[routerIndex].addCdpEntry(switchCDP)
+		if len(dupes) > 0:
+			switchUpdates = []
+			newSwitch = router([])
+			switchHostname = 'SW' + str(len(switchList)+1)
+			newSwitch.addHostname(switchHostname)
+			newSwitch.addCapability('switch')
+			portUpdate = switchUpdate([])
+			portUpdate.addswitchHostname(switchHostname)
+			portUpdate.adddstHostname(routerVal.hostname)
+			portUpdate.addSwitchport(dupes[0])
+			switchUpdates.append(portUpdate)
+
+			for dupeIDX, dupeInterface in enumerate(dupes):	
+				if dupeIDX > 0:
+					for cdpIDX, cdpVal in enumerate(routerVal.cdp_entries):
+						if cdpVal.srcPort == dupeInterface:
+							endUpdate = switchUpdate([])
+							portUpdate.addswitchHostname(switchHostname)
+							portUpdate.adddstHostname(routerVal.hostname)
+							endUpdate.addSwitchport(cdpVal.dstPort)
+							switchUpdates.append(copy.copy(endUpdate))
+							endUpdate.clear()
+			for updateIDX, updateVal in enumerate(switchUpdates):
+				switchCDP = cdpEntry([])
+				switchCDP.addHostname(updateVal.dstHostname)
+				switchCDP.addSrcPort(switchHostname)
+				switchCDP.addDstPort(updateVal.switchport)
+				newSwitch.addCdpEntry(copy.copy(switchCDP))
+		updateSwitchLinks(topology, switchUpdates, switchHostname)
+
+def updateSwitchLinks(topology, switchUpdates, switchHostname):
+	print 'Called'
+	interfaceValue = 0
+	for value in switchUpdates:
+		for routerIDX, routerVal in enumerate(topology.routerList):
+			for cdpIDX, cdpVal in enumerate(routerVal.cdp_entries):
+				if ((routerVal.hostname == value.dstHostname) and (cdpVal.srcPort == value.switchport)):
+					topology.routerList[routerIDX].removeCDPEntry(cdpVal.srcPort)
+					print 'Deleted: ' + routerVal.hostname + ' port: ' + value.switchport
+					switchCDP = cdpEntry([])
+					switchCDP.addHostname(switchHostname)
+					switchCDP.addSrcPort(value.switchport)
+					switchCDP.addDstPort(str(interfaceValue))
+					topology.routerList[routerIDX].addCdpEntry(copy.copy(switchCDP))
+					interfaceValue+=1
 	
 def createJSON(topology):
 	jsonTopology = jsonObject([])
@@ -353,12 +404,12 @@ if __name__ == "__main__":
 			print cdpVal.hostname + ' on ' + cdpVal.srcPort + ' to ' + cdpVal.dstPort
 	
 	pickle.dump(topology, open("simulationTopology.p", "wb"))
-	#createJSON(topology)
-	#routerDict = {}
-	#for j, routerVal in enumerate(topology.routerList):
-	#	routerDict[routerVal.hostname] = routerVal.ipAddress
-	#print routerDict
-	#pickle.dump(routerDict, open("routerDictionary.p", "wb"))
-	#with pysftp.Connection('178.62.24.178', username='sftp', private_key='/home/rob/.ssh/id_rsa') as sftp:
-	#	with sftp.cd('json-files'):
-	#		sftp.put('topology.json')
+	createJSON(topology)
+	routerDict = {}
+	for j, routerVal in enumerate(topology.routerList):
+		routerDict[routerVal.hostname] = routerVal.ipAddress
+	print routerDict
+	pickle.dump(routerDict, open("routerDictionary.p", "wb"))
+	with pysftp.Connection('178.62.24.178', username='sftp', private_key='/home/rob/.ssh/id_rsa') as sftp:
+		with sftp.cd('json-files'):
+			sftp.put('topology.json')
