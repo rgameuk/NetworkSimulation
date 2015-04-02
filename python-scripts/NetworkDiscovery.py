@@ -290,54 +290,61 @@ def sortCDPInterfaces(topology):
 def findSwitches(topology):
 	print 'Looking for switches'
 	switchList = []
+	switchID = 1
 	for routerIDX, routerVal in enumerate(topology.routerList):
-		seen = set()
-		uniq = []
-		dupes = []
-		for cdpIDX, cdpVal in enumerate(routerVal.cdp_entries):
-			if cdpVal.srcPort not in seen:
-				uniq.append(cdpVal.srcPort)
-				seen.add(cdpVal.srcPort)
-			else:
-				dupes.append(cdpVal.srcPort)
-		set(dupes)
+		if routerVal.capabilities == 'Router':
+			seen = set()
+			uniq = []
+			dupes = []
+			for cdpIDX, cdpVal in enumerate(routerVal.cdp_entries):
+				if cdpVal.srcPort not in seen:
+					uniq.append(cdpVal.srcPort)
+					seen.add(cdpVal.srcPort)
+				else:
+					dupes.append(cdpVal.srcPort)
+			set(dupes)
 
-		if len(dupes) > 0:
-			switchUpdates = []
-			newSwitch = router([])
-			switchHostname = 'SW' + str(len(switchList)+1)
-			newSwitch.addHostname(switchHostname)
-			newSwitch.addCapability('switch')
-			portUpdate = switchUpdate([])
-			portUpdate.addswitchHostname(switchHostname)
-			portUpdate.adddstHostname(routerVal.hostname)
-			portUpdate.addSwitchport(dupes[0])
-			switchUpdates.append(portUpdate)
-
-			for dupeIDX, dupeInterface in enumerate(dupes):	
-				if dupeIDX > 0:
+			if len(dupes) > 0:
+				
+				print routerVal.hostname
+				print dupes
+				for dupeIDX, dupeInterface in enumerate(dupes):
+					switchUpdates = []	
+					newSwitch = router([])
+					switchHostname = 'SW' + str(switchID)
+					newSwitch.addHostname(switchHostname)
+					newSwitch.addCapability('switch')
+					localUpdate = switchUpdate([])
+					localUpdate.addswitchHostname(switchHostname)
+					localUpdate.adddstHostname(routerVal.hostname)
+					localUpdate.addSwitchport(dupeInterface)
+					switchUpdates.append(localUpdate)
+					#if dupeIDX > 0:
 					for cdpIDX, cdpVal in enumerate(routerVal.cdp_entries):
 						if cdpVal.srcPort == dupeInterface:
 							endUpdate = switchUpdate([])
-							portUpdate.addswitchHostname(switchHostname)
-							portUpdate.adddstHostname(routerVal.hostname)
+							endUpdate.addswitchHostname(switchHostname)
+							endUpdate.adddstHostname(cdpVal.hostname)
 							endUpdate.addSwitchport(cdpVal.dstPort)
 							switchUpdates.append(copy.copy(endUpdate))
 							endUpdate.clear()
-			for updateIDX, updateVal in enumerate(switchUpdates):
-				switchCDP = cdpEntry([])
-				switchCDP.addHostname(updateVal.dstHostname)
-				switchCDP.addSrcPort(switchHostname)
-				switchCDP.addDstPort(updateVal.switchport)
-				newSwitch.addCdpEntry(copy.copy(switchCDP))
-			updateSwitchLinks(topology, switchUpdates, switchHostname)
-			switchExists = False
-			for deviceIDX, deviceVal in enumerate(topology.routerList):
-				if deviceVal.hostname == switchHostname:
-					switchExists = True
-			if switchExists == False:
-				topology.addRouter(newSwitch)
-		
+					switchExists = False
+					for deviceIDX, deviceVal in enumerate(topology.routerList):
+						if deviceVal.hostname == switchHostname:
+							switchExists = True
+					if switchExists == False:
+						topology.addRouter(newSwitch)
+						switchList.append(newSwitch.hostname)
+						switchID+=1
+				#for val in switchUpdates:
+				#	print val.switchHostname + val.dstHostname + val.switchport
+					for updateIDX, updateVal in enumerate(switchUpdates):
+						switchCDP = cdpEntry([])
+						switchCDP.addHostname(updateVal.dstHostname)
+						switchCDP.addSrcPort(str(updateIDX))
+						switchCDP.addDstPort(updateVal.switchport)
+						newSwitch.addCdpEntry(copy.copy(switchCDP))
+					updateSwitchLinks(topology, switchUpdates, switchHostname)
 
 def updateSwitchLinks(topology, switchUpdates, switchHostname):
 	print 'Called'
