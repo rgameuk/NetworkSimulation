@@ -4,9 +4,12 @@
 \usepackage[parfill]{parskip}
 \usepackage{listings}
 \usepackage{color}
+\usepackage{cite}
+\usepackage[round]{natbib}
+
 
 \lstset{frame=tb,
-  language=Java,
+  language=Python,
   aboveskip=3mm,
   belowskip=3mm,
   showstringspaces=false,
@@ -45,10 +48,13 @@ In recent years the use of a second, entirely separate infrastructure has been u
 This project will aim to create a tool intended for use in a Network Operations team in large scale enterprise. This tool will aim to pull together different aspects of Network Management tools and use information available to create a network model inside of the Cisco VIRL emulated environment. Using this model the Network Operations team can test environment changes on a model of their own network. Using data gathered from this simulation and the changes observed during any configuration edits the tool will then aim to create a piece of testing evidence which can be used to support any Change Management required on the infrastructure.
 \\
 \\
-Large organisations, which are the primary target of the proposed tool, will often have Configuration Repositories and Configuration Management Databases (CMDB) that store relevant configurations and server locations. Alternatively, a networks team may want to generate a emulated version of an unknown network in order to understand its topology and configuration. The proposed tool will combine network emulation technology with these data sources to allow a Network Administrator to mimic changes to a production network and observe the impact that they have on data flow and connectivity. In particular the tool will generate testing evidence as proof of any impact (or lack of) when raising a network change.
+Large organisations, which are the primary target of the proposed tool, will often have Configuration Repositories and Configuration Management Databases (CMDB) that store relevant configurations and server locations. Alternatively, a networks team may want to generate a emulated version of an unknown network in order to understand its topology and configuration. The proposed tool will combine network emulation technology with these data sources to allow an Administrator to mimic changes to a production network and observe the impact that they have on data flow and connectivity. In particular the tool will generate testing evidence as proof of any impact (or lack of) when raising a network change.
 \\
 \\
-The proposed tool provides value to a Network Engineer as it allows them to be more flexible in their network testing. With the proposed solution an Engineer will no longer need to create a physical clone of the network in a lab environment, nor will the need rely on outdated network documentation. A emulated copy of the network can be produced from a node-edge representation of the topology along with the configurations for devices. This will save the Engineer time in the planning of changes as well as allowing them to implement the changes in a non-production environment, in addition to the time savings an Engineer will also be able to produce testing evidence which can be used for Change Management purposes.
+The proposed tool provides value to a Network Engineer as it allows them to be more flexible in their network testing. With the proposed solution an Engineer will no longer need to create a physical clone of the network in a lab environment, nor will the need rely on outdated documentation. A emulated copy of the network can be produced from a node-edge representation of the topology along with the configurations for devices. This will save the Engineer time in the planning as well as allowing them to implement the changes in a non-production environment, in addition to the time savings an Engineer will also be able to produce testing evidence which can be used for Change Management purposes.
+\\
+\\
+From initial findings it is understood that there are currently solutions for creating a simulated network, however, these tools rely on an Engineer to rebuild a network from scratch. Implementing the topology and interconnecting devices requires a well-documented network and in addition to the physical layout, the simulated devices also require a configuration which matches the real network. This project will aim to create a tool which will provide use to a Network Engineer regardless of the documentation they have for their infrastructure, allowing the Engineer to produce an emulated copy of their physical network without the need to reproduce the infrastructure on a device-by-device basis. The tool will produce an emulation of the network as a whole rather than focusing on devices.
 
 \section{Scope}
 
@@ -64,6 +70,20 @@ This solution is targeted at medium to large enterprise which have a considerabl
 \item{Investigate new methods for an Engineer to interact with a network}
 \item{The production of detailed testing evidence during the simulation, such as neighbour tables, routing entries or link statuses.}
 \end{itemize}
+
+\chapter{Literature Review}
+
+This chapter will review current publications in the field of network simulation and testing, I will use this literature first to gain inspiration for this project but also as a gap-analysis of the proposed tool. It will first focus on the use of Virtualisation in computer infrastructure, before looking at the use of network management techniques to gather information about a the infrastructure before finally focusing on 'What-if?' scenarios on a network and which tests are of most beneficial to a Network Engineer.
+
+\section{Virtualisation in Infrastructure}
+
+Virtualisation of infrastructure components has grown rapidly in the previous decade with the implementation of Cloud Computing being "one of the most explosively expanding
+technologies in the computing industry today" \citep{younge2011analysis}. The technology relies on the 
+
+\section{Network Testing and Management}
+
+\section{What-if? Scenarios}
+
 
 \chapter{Current Solutions and Cisco VIRL}
 
@@ -104,7 +124,7 @@ In addition to the features provided for functionality within VM Maestro, there 
 \\
 Server support within VIRL is provided through pre-defined image varying in system requirements. The default images are Ubuntu but other images can be imported if required. These servers can be connected to the internet in order to customise them for to the users needs, an example would be installing an SNMP Server in order to poll the routers for information.
 
-\chapter{Proposed Tool - Network Emulator}
+\chapter{Proposed Tool}
 
 \section{High-Level Design}
 
@@ -400,6 +420,9 @@ snmpwalk -v 2c -c public 172.30.0.1 .1.3.6.1.4.1.9.9.23.1.2.1.1.6.1.2
 .1.3.6.1.2.1.4.1 - Gives ip forwarding (1 is router, 0 is a switch)
 
 .1.3.6.1.4.1.9.9.23.1.2.1.1.7 - Gives interfaces on neighbour
+
+\bibliographystyle{plainnat}
+\bibliography{bibliography}
 
 \end{document}
 
