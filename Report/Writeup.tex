@@ -6,6 +6,7 @@
 \usepackage{color}
 \usepackage{cite}
 \usepackage[round]{natbib}
+\usepackage{comment}
 
 
 \lstset{frame=tb,
@@ -43,17 +44,13 @@ In recent years technology for large enterprise has advanced significantly due t
 \chapter{Introduction}
 
 In recent years the use of a second, entirely separate infrastructure has been used to develop tools, test changes and simulate outages of IT Systems. In a large scale infrastructure these environments are usually created for testing changes on Server or Application environments, however the need for real traffic and the cost of dedicated hardware makes this difficult in the Network Infrastructure. The use of a physical lab takes time to set up and teams usually do not use them unless they are planning for large scale infrastructure changes.
-\\
-\\
+
 This project will aim to create a tool intended for use in a Network Operations team in large scale enterprise. This tool will aim to pull together different aspects of Network Management tools and use information available to create a network model inside of the Cisco VIRL emulated environment. Using this model the Network Operations team can test environment changes on a model of their own network. Using data gathered from this simulation and the changes observed during any configuration edits the tool will then aim to create a piece of testing evidence which can be used to support any Change Management required on the infrastructure.
-\\
-\\
+
 Large organisations, which are the primary target of the proposed tool, will often have Configuration Repositories and Configuration Management Databases (CMDB) that store relevant configurations and server locations. Alternatively, a networks team may want to generate a emulated version of an unknown network in order to understand its topology and configuration. The proposed tool will combine network emulation technology with these data sources to allow an Administrator to mimic changes to a production network and observe the impact that they have on data flow and connectivity. In particular the tool will generate testing evidence as proof of any impact (or lack of) when raising a network change.
-\\
-\\
+
 The proposed tool provides value to a Network Engineer as it allows them to be more flexible in their network testing. With the proposed solution an Engineer will no longer need to create a physical clone of the network in a lab environment, nor will the need rely on outdated documentation. A emulated copy of the network can be produced from a node-edge representation of the topology along with the configurations for devices. This will save the Engineer time in the planning as well as allowing them to implement the changes in a non-production environment, in addition to the time savings an Engineer will also be able to produce testing evidence which can be used for Change Management purposes.
-\\
-\\
+
 From initial findings it is understood that there are currently solutions for creating a simulated network, however, these tools rely on an Engineer to rebuild a network from scratch. Implementing the topology and interconnecting devices requires a well-documented network and in addition to the physical layout, the simulated devices also require a configuration which matches the real network. This project will aim to create a tool which will provide use to a Network Engineer regardless of the documentation they have for their infrastructure, allowing the Engineer to produce an emulated copy of their physical network without the need to reproduce the infrastructure on a device-by-device basis. The tool will produce an emulation of the network as a whole rather than focusing on devices.
 
 \section{Scope}
@@ -80,40 +77,46 @@ This chapter will review current publications in the field of network simulation
 
 Virtualisation of infrastructure components has grown rapidly in the previous decade with the implementation of Cloud Computing being `one of the most explosively expanding
 technologies in the computing industry today' \citep{younge2011analysis}.
-\\
-\\
+
 The technology relies on the on a on creating a sandbox within a physical host in which `multiple operating systems can safely coexist on one physical machine' \citep{mergen2006virtualization} these virtual operating systems are governed by a tool known as a Hypervisor or Virtual Machine Monitor which 'safely multiplexes the hardware resources of the physical machine but leaves the specific hardware resource allocation to the operating system in the virtual machine' \citep{mergen2006virtualization} creating the illusion to these virtual operating systems that they have full control of their hardware when in fact they are running in a sandbox environment cut-off from the 'real' hardware. 
-\\
-\\
+
 The benefits of server virtualisation come in both a technical and economic form. \citep{crosby2006virtualization} says `the artifacts of current operating-system and system-software architecture result in most servers today running at under 10 percent utilization.' from a technical perspective the implementation of a virtual server for multiple operating system instances versus a separate physical host each allows for much better utilisation of a single server and thus provides gains in capacity management for infrastructure. Economic benefits come from the amount of physical hardware required in a Data Centre, \citep{daniels2009server} says `Data center floor space and rack space are prime real estate in computing environments. Cooling and electricity costs have risen in recent years' and the adoption of virtual infrastructure can help keep costs down which allows enterprises to implement practises such as High Availability services.
-\\
-\\
+
+\begin{comment}
 At first glance the adoption of virtual infrastructure may seem to only bring benefits to enterprise, however \citep{kotsovinos2010virtualization} highlights some issues that arise with implementing virtualisation technology in large infrastructure. In this article the author talks about issues such as System Sprawl where `developers forget to return the VMs they do not use to the pool after the end of a project' creating problems in accountability and server ownership. In addition to this there is also a breakdown in the conventional responsibility of teams (silos) as issues can arise from multiple areas of infrastructure, the author says `cross-silo collaboration and communication are of paramount importance, requiring a true mentality shift in the way enterprise infrastructure organizations operate' which may be difficult to implement. A third issue that arises is the added complexity of changes as `Sharing the infrastructure comes with centralization and, therefore, with potential bottlenecks that are not as well understood' this creates additional complexity in Change Management as it is no longer as clear how a decision can affect the infrastructure as a whole.
+\end{comment}
+
+From the literature it is clear that virtualisation is a technology which is gaining momentum in large enterprise. The use of which allows engineers to make use of their infrastructure efficiently in both capacity and cost. It is clear that virtualisation is the correct method of implementing a network testing tool due to it's scalability and ease of implementation when compared to physical equipment. 
 
 \section{Virtualisation of Network Components}
 
+From a testing perspective, virtualisation in the network infrastructure comes in the form of device emulation. \citep{galan2004use} discusses the use of virtualisation tools within a network lab, 
+in this paper the author describes a scenario in which they have used a virtual network as a platform for learning. Features such as the ability to quickly create a simulation and the ease of restoring defaults when problems arise are highlighted as a significant benefit of simulation over real devices, particularly in a learning environment where misconfigurations are likely to occur. However, the author also highlights opportunities that are missed with simulated devices, such as having no physical contact with the routers means that hands-on experience is lost.
 
-\section{Network Testing and Management}
+\citep{Knight:2012:ASL:2342356.2342378} says `Emulated networks, which run a real router operating systems inside virtual machines, offer realistic yet inexpensive network experimentation. However they are time-consuming to configure, which limits their use in network research'. In this paper there is a proposal of a tool to simplify the creation of emulated networks, Autonetkit, which provides the ability to generate thousands of lines of configuration code across multiple devices from a high-level description of the topology as a whole. In particular this paper highlights the difficulty faced when creating an emulated network from scratch. When dealing with networks of hundreds or possibly thousands of nodes the time taken to configure each can outstrip the benefits of an emulated network.
 
-\section{What-if? Scenarios}
+This section of the Literature Review has given views on both the benefits and shortfalls of using virtualisation in network infrastructure. A significant benefit to network emulation is cost, with physical devices there is a significant investment in a single device with most requiring a support contract. For a large organisation this may be seen as an unnecessary expenditure, whereas the licensing cost for a VM may be considerably more cost effective. One shortfall of emulation that has been identified in the literature is the difficulty of defining a network from scratch, this will be taken into consideration when designing the proposed solution.
 
+\section{Network Management and What-if? Scenarios}
+
+Configuration and Change Management is a particularly important aspect in modern infrastructure systems, in particular improved vigilance on Change Management to Networks can improve reliability and uptime in for systems as a whole. \citep[p.270-273]{bellovin2009configuration} discusses these aspects both from a network and whole infrastructure perspective. In the paper's case study it talks of the importance of router configuration management to a large Internet Service Provider, one particular use of configuration management is understanding a malicious attack by viewing the current configuration as `the differences between the authorized configuration and the one installed by the intruder can give valuable clues as to goals and motives'
+
+`What-if' scenarios are a section of Network Testing that allows an Engineer to understand how their topology will cope should an event occur. \citep{lad2006visualizing} discusses a potential solution to the uncertainty of a network change on the Internet, in this paper the author proposes a tool which allows the impact of a BGP update to be understood by providing a visual representation of changes to an Autonomous System's forwarding path. This tool allows an Engineer to understand where traffic is flowing in the event of a change to a network. However, this tool falls short as it only allows an Engineer to view routing changes in real-time instead of gaining an understanding of what could happen.
+
+This section of the Literature Review was particularly difficult as there are very few tools available that allow both emulation of a real network and feedback on changes to the emulated network. This indicates a gap in current solutions which the proposed solution may be able to target.
 
 \chapter{Current Solutions and Cisco VIRL}
 
 \section{Current Solutions}
 
 Full network simulation is a relatively new concept which has been embraced recently due to the uptake of hypervisors and virtualisation of Operating Systems. With regards to Network Simulation there has been a slowed uptake due to the majority market share that Cisco has and their limited offerings in the virtualisation market.
-\\
-\\
+
 Other network device vendors such as HP and Huawei have offered simulated versions of their network equipment. These simulations tend to focus on creating a learning environment for their tools and as such do not perform adequately as simulated ‘real world’ devices. These devices tend to work as a simulator in that they mimic the behaviour of a network, and not the devices. For example, the software will decide to build an OSPF relation should the required fields match on the devices. In contrast, a simulator (and real device) will build the relationship through a series of negotiations and packet transfers. As a result these simulators cannot be used reliably as network testing tool as the behaviour is predefined and may not be a true reflection of real hardware.
-\\
-\\
+
 The Open Source community has played a role in this field, a project named GNS3 was started in 2006 which aimed to create  unified tool to pull together hardware simulation and topology design into one UI. From this they created GNS3, a front end which allowed users to create a topology in a ‘drag and drop’ style and then start equipment as required. GNS3 is intended to be a multi-vendor tool but is particularly used for Cisco simulations. Using a hypervisor called Dynamips the tool can create a VM of a Cisco router which can be interconnected to create a real topology. In addition to this, GNS3 can be adapted as a network emulator, which enables a user to connect their simulated topology to their physical network.
-\\
-\\
+
 GNS3 works well for Cisco router simulation, however it falls short when looking at Layer 2 simulation. Features such as Spanning Tree Protocol rely heavily on the fast processing speed of Application Specific Integrated Circuitry (ASICs) which are specific chips within the switches that can quickly process frames. Cisco IOS combined with Dynamips cannot process frames fast enough in order to successfully implement these protocols. Therefore when testing redundancy scenarios such as outages which force a Layer 2 topology change cannot be tested. In addition to the issues outlined above there is no support for network discovery and the building of topologies for network testing.
-\\
-\\
+
 From the review of current solutions there has not been a tool which can generate simulations of existing hardware. The only solutions at current are bare-bones building tool for network designs. The proposed tool is different in that its purpose is to be used in existing infrastructure to test disaster recovery or planned configuration changes.
 
 \textit{Note: This is going to be expanded to include some papers on both simulation and network management techniques. Ideally taking form as a literature review}
