@@ -3,7 +3,7 @@ var height = 800;
 var radius = 20;
 
 var force = d3.layout.force()   //Defines the elements of forces in the simulation, charges ensure that nodes (routers) do not overlap
-    .charge(-500)   //charge defines how nodes interact with one another, negative charges causes repulsion
+    .charge(-2000)   //charge defines how nodes interact with one another, negative charges causes repulsion
     .linkDistance(200)  //distance between nodes at page load
     .size([width, height]); //Defines the boundries of physics simulation
 
@@ -51,11 +51,22 @@ d3.json("topology.json", function(json) {
                     .enter()
                     .append("g");
 
-    nodes.append("circle")  //appends circle to node group
-        //.attr("class", "node")
-        .attr("r", radius)
-        .style("fill", "steelblue")
-        .call(node_drag);
+    nodes.append("path")
+            //Symbols used for display of router or switch
+            .attr("d", d3.svg.symbol()
+                .type(function(d) { 
+                    if (d.deviceType == 'Router'){
+                        return d3.svg.symbolTypes[0];
+                        //0 returns a circle, 3 returns a square
+                    }
+                    else{
+                        return d3.svg.symbolTypes[3]; 
+                    } 
+                })
+                .size(2056)
+            )
+            .style("fill", "steelblue")
+            .call(node_drag);
 
     nodes.append("text")    //appends hostname to node group
         .attr("x", 1)
