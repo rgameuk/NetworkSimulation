@@ -4,7 +4,7 @@ var radius = 20;
 
 var force = d3.layout.force()   //Defines the elements of forces in the simulation, charges ensure that nodes (routers) do not overlap
     .charge(-2000)   //charge defines how nodes interact with one another, negative charges causes repulsion
-    .linkDistance(200)  //distance between nodes at page load
+    .linkDistance(400)  //distance between nodes at page load
     .size([width, height]); //Defines the boundries of physics simulation
 
 var svg = d3.select("#diagram"); //Variable to hold the svg element containing the diagram
@@ -40,11 +40,11 @@ d3.json("topology.json", function(json) {
         force.stop(); //Turns off forces as no longer required - 
     }
 
-    var links = svg.append("g").selectAll("line.link")  //Appends links between nodes, denoted by json
-        .data(force.links())
-        .enter().append("line")
-        .attr("marker-end", "url(#stub)")   //defined in html
-        .attr("class", "link");
+    var link = svg.selectAll(".link")
+      .data(force.links())
+    .enter().append("line")
+    .attr("marker-end", "url(#stub)")   //defined in html
+    .attr("class", "link");
 
     var nodes = svg.selectAll("g")  //nodes defines a grouping of node 'circle' and hostname
                     .data(force.nodes(), function(d, i) { return d + i;})   //d + 1 required otherwise node 0 is skipped
@@ -77,27 +77,39 @@ d3.json("topology.json", function(json) {
         .attr("pointer-events", "none") //Disables mouse turning to Text mode
         .text(function(d) { return d.hostname; });
 
-    links.append("text")
-        .attr("x", function(d) { return d.source.x + (d.target.x - d.source.x)/2; })
-        .attr("y", function(d) { return d.source.y + (d.target.y - d.source.y)/2; })
-        .text(function(d){ return d.srcPort + " --->    " + d.dstPort});
+    var labels = svg.selectAll('text')
+    .data(force.links())
+    .enter().append('text') 
+    .attr("text-anchor", "middle") 
+    .attr("x", function(d) { return (d.source.y + d.target.y) / 2; }) 
+    .attr("y", function(d) { return (d.source.x + d.target.x) / 2; }) 
+    .attr("dx", 1)
+    .attr("dy", ".35em")
+    .text(function(d) { return '(' + d.srcRouter + ')' + d.srcPort + "          (" + d.dstPort + ')'})
 
     force.on("tick", function() {   //tick function defines what the simulation does over time
-        links.attr("x1", function(d) { return d.source.x; })
+        link.attr("x1", function(d) { return d.source.x; })
             .attr("y1", function(d) { return d.source.y; })
             .attr("x2", function(d) { return d.target.x; })
             .attr("y2", function(d) { return d.target.y; });
 
+        labels.attr("x", function(d) { return (d.source.x + d.target.x) / 2; }) 
+        .attr("y", function(d) { return (d.source.y + d.target.y) / 2; }) 
+        
         nodes.attr("transform", function (d) {
             return "translate(" + d.x + "," + d.y + ")";
         });
+
     });
 
     function updatePosition() { //Manually updates the position of a selected node
-        links.attr("x1", function(d) { return d.source.x; })
+        link.attr("x1", function(d) { return d.source.x; })
           .attr("y1", function(d) { return d.source.y; })
           .attr("x2", function(d) { return d.target.x; })
           .attr("y2", function(d) { return d.target.y; });
+        
+        labels.attr("x", function(d) { return (d.source.x + d.target.x) / 2; }) 
+        .attr("y", function(d) { return (d.source.y + d.target.y) / 2; }) 
 
         nodes.attr("transform", function (d) {
             return "translate(" + d.x + "," + d.y + ")";
