@@ -78,4 +78,11 @@ if __name__ == "__main__":
 		p.insert_after('interface GigabitEthernet0/0', '! Configured on launch', exactmatch=True, atomic=False)
 		p.insert_after('interface GigabitEthernet0/0', ' description OOB Management', exactmatch=True, atomic=False)
 
+		for obj in p.find_objects(r'^line vty'):
+			obj.delete(recurse=True)
+
+		p.insert_before('end', 'login cisco password 0 cisco', exactmatch=True, atomic=False)
+		p.insert_after('login cisco password 0 cisco', 'line vty 0 4', exactmatch=True, atomic=False)
+		p.insert_after('line vty 0 4', 'login local', exactmatch=True, atomic=False)
+		p.insert_after('login local', 'transport input telnet ssh', exactmatch=True, atomic=False)
 		p.save_as('./config-files/' + key.lower() + '.edited')
