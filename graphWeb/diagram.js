@@ -4,7 +4,7 @@ var radius = 20;
 
 var force = d3.layout.force()   //Defines the elements of forces in the simulation, charges ensure that nodes (routers) do not overlap
     .charge(-2000)   //charge defines how nodes interact with one another, negative charges causes repulsion
-    .linkDistance(400)  //distance between nodes at page load
+    .linkDistance(200)  //distance between nodes at page load
     .size([width, height]); //Defines the boundries of physics simulation
 
 var svg = d3.select("#diagram"); //Variable to hold the svg element containing the diagram
@@ -40,11 +40,32 @@ d3.json("topology.json", function(json) {
         force.stop(); //Turns off forces as no longer required - 
     }
 
+    // Define the div for the tooltip
+    var div = d3.select("body").append("div")   
+    .attr("class", "tooltip")               
+    .style("opacity", 0);
+
     var link = svg.selectAll(".link")
-      .data(force.links())
-    .enter().append("line")
+      .data(force.links())  //uses the links json defined earlier
+    .enter().append("line") //appends visual line
     .attr("marker-end", "url(#stub)")   //defined in html
-    .attr("class", "link");
+    .attr("class", "link")
+    .style("stroke", "grey")
+    .style("stroke-width", 4)   //Adds a stroke making the hover-over easier
+    .on("mouseover", function(d) {      
+            div.transition()    //transition for the hover-over        
+                .duration(10) //short duration to improve responsibility     
+                .style("opacity", .9);      
+            div .html(d.srcRouter + ' Interface: <b>' + d.srcPort + "</b><br/>" + d.dstRouter + ' Interface: <b>' + d.dstPort + '</b>')  //Displays the interface information for the links
+                .style("left", (d3.event.pageX) + "px")     //sets the location of the div for the tooltip
+                .style("top", (d3.event.pageY - 28) + "px");    
+            })                  
+        .on("mouseout", function(d) { //function for the event where mouse is moved away from a link 
+            div.transition()        
+                .duration(500)      
+                .style("opacity", 0);   
+        });
+
 
     var nodes = svg.selectAll("g")  //nodes defines a grouping of node 'circle' and hostname
                     .data(force.nodes(), function(d, i) { return d + i;})   //d + 1 required otherwise node 0 is skipped
@@ -77,24 +98,11 @@ d3.json("topology.json", function(json) {
         .attr("pointer-events", "none") //Disables mouse turning to Text mode
         .text(function(d) { return d.hostname; });
 
-    var labels = svg.selectAll('text')
-    .data(force.links())
-    .enter().append('text') 
-    .attr("text-anchor", "middle") 
-    .attr("x", function(d) { return (d.source.y + d.target.y) / 2; }) 
-    .attr("y", function(d) { return (d.source.x + d.target.x) / 2; }) 
-    .attr("dx", 1)
-    .attr("dy", ".35em")
-    .text(function(d) { return '(' + d.srcRouter + ')' + d.srcPort + "          (" + d.dstPort + ')'})
-
     force.on("tick", function() {   //tick function defines what the simulation does over time
         link.attr("x1", function(d) { return d.source.x; })
             .attr("y1", function(d) { return d.source.y; })
             .attr("x2", function(d) { return d.target.x; })
             .attr("y2", function(d) { return d.target.y; });
-
-        labels.attr("x", function(d) { return (d.source.x + d.target.x) / 2; }) 
-        .attr("y", function(d) { return (d.source.y + d.target.y) / 2; }) 
         
         nodes.attr("transform", function (d) {
             return "translate(" + d.x + "," + d.y + ")";
@@ -107,9 +115,6 @@ d3.json("topology.json", function(json) {
           .attr("y1", function(d) { return d.source.y; })
           .attr("x2", function(d) { return d.target.x; })
           .attr("y2", function(d) { return d.target.y; });
-        
-        labels.attr("x", function(d) { return (d.source.x + d.target.x) / 2; }) 
-        .attr("y", function(d) { return (d.source.y + d.target.y) / 2; }) 
 
         nodes.attr("transform", function (d) {
             return "translate(" + d.x + "," + d.y + ")";
