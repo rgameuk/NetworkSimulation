@@ -187,22 +187,24 @@ if __name__ == "__main__":
 	configEntry.text = serverInfo
 	serverExt.append(configEntry)
 	serverEntry.append(serverExt)
-	serverInt = etree.Element('interface')
-	serverInt.attrib['id'] = '0'
-	serverInt.attrib['name'] = 'eth1'
-	serverEntry.append(serverInt)
-	serverInt.attrib['id'] = '2'
-	serverInt.attrib['name'] = 'eth2'
-	serverEntry.append(serverInt)
+	serverIntOne = etree.Element('interface')
+	serverIntOne.attrib['id'] = '0'
+	serverIntOne.attrib['name'] = 'eth1'
+	serverEntry.append(serverIntOne)
+	serverIntTwo = etree.Element('interface')
+	serverIntTwo.attrib['id'] = '1'
+	serverIntTwo.attrib['name'] = 'eth2'
+	serverEntry.append(serverIntTwo)
 	topology.append(serverEntry)
 	snatObject = etree.Element('node')
 	snatObject.attrib['name'] = 'snat-1'
 	snatObject.attrib['type'] = 'ASSET'
 	snatObject.attrib['subtype'] = 'SNAT'
 	snatObject.attrib['location'] = str(random.randrange(0,500)) + ","  + str(random.randrange(0,500))
-	serverInt.attrib['id'] = '0'
-	serverInt.attrib['name'] = 'link0'
-	snatObject.append(serverInt)
+	snatInt = etree.Element('interface')
+	snatInt.attrib['id'] = '0'
+	snatInt.attrib['name'] = 'link0'
+	snatObject.append(snatInt)
 	topology.append(snatObject)
 
 
@@ -369,9 +371,9 @@ if __name__ == "__main__":
 						topologyConnections.addConnection(newConnectionStore)
 
 	snatInt = etree.Element('connection')
-	destinationString = '/virl:topology/virl:node[' + str(len(deviceTopology.routerList)+1) + ']/virl:interface[1]'
+	destinationString = '/virl:topology/virl:node[' + str(len(deviceTopology.routerList)+2) + ']/virl:interface[1]'
 	snatInt.attrib['dst'] = destinationString
-	sourceString = '/virl:topology/virl:node[' + str(len(deviceTopology.routerList)+2) + ']/virl:interface[1]'
+	sourceString = '/virl:topology/virl:node[' + str(len(deviceTopology.routerList)+1) + ']/virl:interface[1]'
 	snatInt.attrib['src'] = sourceString
 	topology.append(snatInt)
 
