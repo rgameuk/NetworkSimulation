@@ -168,6 +168,46 @@ if __name__ == "__main__":
 			topology.append(newNode)
 			routerIndexes.addDevice(routerIndex)
 
+	with open ("virlServerEntry.p", "r") as f:
+		serverInfo=f.read()
+
+	#topology.append(serverXML)
+	serverEntry = etree.Element('node')
+	newNode.attrib['name'] = 'virl-sim-server'
+	newNode.attrib['type'] = 'SIMPLE'
+	newNode.attrib['subtype'] = 'server'
+	newNode.attrib['location'] = str(random.randrange(0,500)) + ","  + str(random.randrange(0,500))
+	serverExt = etree.Element('extensions')
+	configEntry = etree.Element('entry')
+	configEntry.attrib['key'] = 'AutoNetkit.server_username'
+	configEntry.attrib['type'] = 'string'
+	configEntry.text = 'cisco'
+	serverExt.append(configEntry)
+	configEntry.attrib['key'] = 'config'
+	configEntry.attrib['type'] = 'string'
+	configEntry.text = serverInfo
+	serverExt.append(configEntry)
+	newNode.append(serverExt)
+	serverInt = etree.Element('interface')
+	serverInt.attrib['id'] = '0'
+	serverInt.attrib['name'] = 'eth1'
+	newNode.append(serverInt)
+	serverInt.attrib['id'] = '2'
+	serverInt.attrib['name'] = 'eth2'
+	newNode.append(serverInt)
+	topology.append(newNode)
+	snatObject = etree.Element('node')
+	snatObject.attrib['name'] = 'snat-1'
+	snatObject.attrib['type'] = 'ASSET'
+	snatObject.attrib['subtype'] = 'SNAT'
+	snatObject.attrib['location'] = str(random.randrange(0,500)) + ","  + str(random.randrange(0,500))
+	serverInt.attrib['id'] = '0'
+	serverInt.attrib['name'] = 'link0'
+	snatObject.append(serverInt)
+	topology.append(snatObject)
+
+
+
 	for routerIDX, routerVal in enumerate(deviceTopology.routerList):
 		#IDs IN THE CONNECTIONS ARE THE RELATIVE DEFINITION
 		if routerVal.capabilities == 'Router':
@@ -330,12 +370,20 @@ if __name__ == "__main__":
 						topology.append(newConnection)
 						topologyConnections.addConnection(newConnectionStore)
 
+	snatInt = etree.Element('connection')
+	destinationString = '/virl:topology/virl:node[' + str(len(deviceTopology.routerList)+1) + ']/virl:interface[1]'
+	snatInt.attrib['dst'] = destinationString
+	sourceString = '/virl:topology/virl:node[' + str(len(deviceTopology.routerList)+2) + ']/virl:interface[1]'
+	snatInt.attrib['src'] = sourceString
+	topology.append(snatInt)
+
+	print len(deviceTopology.routerList)
 
 	output = etree.tostring(topology, pretty_print = True)
 	with open('topology.virl', 'w') as f:
 		f.write(output)
 		f.close()
-	print output
+	#print output
 
 	for idx, val in enumerate(topologyConnections.connections):
 		print val.sourceDevice + ' connects to ' + val.destDevice
