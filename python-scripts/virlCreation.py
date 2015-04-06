@@ -171,12 +171,11 @@ if __name__ == "__main__":
 	with open ("virlServerEntry.p", "r") as f:
 		serverInfo=f.read()
 
-	#topology.append(serverXML)
 	serverEntry = etree.Element('node')
-	newNode.attrib['name'] = 'virl-sim-server'
-	newNode.attrib['type'] = 'SIMPLE'
-	newNode.attrib['subtype'] = 'server'
-	newNode.attrib['location'] = str(random.randrange(0,500)) + ","  + str(random.randrange(0,500))
+	serverEntry.attrib['name'] = 'virl-sim-server'
+	serverEntry.attrib['type'] = 'SIMPLE'
+	serverEntry.attrib['subtype'] = 'server'
+	serverEntry.attrib['location'] = str(random.randrange(0,500)) + ","  + str(random.randrange(0,500))
 	serverExt = etree.Element('extensions')
 	configEntry = etree.Element('entry')
 	configEntry.attrib['key'] = 'AutoNetkit.server_username'
@@ -187,15 +186,15 @@ if __name__ == "__main__":
 	configEntry.attrib['type'] = 'string'
 	configEntry.text = serverInfo
 	serverExt.append(configEntry)
-	newNode.append(serverExt)
+	serverEntry.append(serverExt)
 	serverInt = etree.Element('interface')
 	serverInt.attrib['id'] = '0'
 	serverInt.attrib['name'] = 'eth1'
-	newNode.append(serverInt)
+	serverEntry.append(serverInt)
 	serverInt.attrib['id'] = '2'
 	serverInt.attrib['name'] = 'eth2'
-	newNode.append(serverInt)
-	topology.append(newNode)
+	serverEntry.append(serverInt)
+	topology.append(serverEntry)
 	snatObject = etree.Element('node')
 	snatObject.attrib['name'] = 'snat-1'
 	snatObject.attrib['type'] = 'ASSET'
@@ -205,7 +204,6 @@ if __name__ == "__main__":
 	serverInt.attrib['name'] = 'link0'
 	snatObject.append(serverInt)
 	topology.append(snatObject)
-
 
 
 	for routerIDX, routerVal in enumerate(deviceTopology.routerList):
