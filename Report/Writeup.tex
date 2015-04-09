@@ -1,7 +1,9 @@
 \documentclass[11pt]{report}
 
 \usepackage{graphicx}
+\usepackage{float}
 \usepackage[parfill]{parskip}
+\usepackage{rotating}
 \usepackage{listings}
 \usepackage{flafter} 
 \usepackage{color}
@@ -140,7 +142,7 @@ The Open Source community has also played a role in this virtual networks field,
 	\includegraphics[width=1\textwidth]{GNS3.png}
 \end{figure}
 
-GNS3 works well for Cisco router simulation, however it falls short when looking at Layer 2 simulation. Features such as Spanning Tree Protocol rely heavily on the fast processing speed of Application Specific Integrated Circuitry (ASICs) which are specific chips within the switches that can quickly process frames. Cisco IOS combined with Dynamips cannot process frames fast enough in order to successfully implement these protocols. Therefore when testing redundancy scenarios such as outages which force a Layer 2 topology change cannot be tested. In addition to the issues outlined above there is no support for network discovery and the building of topologies for network testing.
+GNS3 works well for Cisco router simulation, however it falls short when looking at Layer 2 simulation. Features such as Spanning Tree Protocol rely heavily on the fast processing speed of Application Specific Integrated Circuitry (ASICs) which are controllers within the switches that can quickly process frames. Cisco IOS combined with Dynamips cannot process frames fast enough in order to successfully implement these protocols. Therefore when testing redundancy scenarios such as outages which force a Layer 2 topology change cannot be tested. In addition to the issues outlined above there is no support for network discovery and the building of topologies for network testing.
 
 In addition to the shortfalls in some protocols, GNS3 lacks the scalability of some of it's competitors. On a conventional PC it can emulated 10-15 devices, however may use up to 90\% of the host's CPU if the IOS version is not calibrated for the host PC, because of this lack in scalability it may not be of any use to large enterprise.
 
@@ -170,13 +172,20 @@ Server support within VIRL is provided through pre-defined image varying in syst
 
 \section{High-Level Design}
 
-At the highest level the proposed tool will provide an Engineer with an emulated version of their physical network for use as a test bed for changes or disaster recovery simulations. At a more granular level the tool is split into four distinct sections: Network Discovery, Network Representation, Emulation and Network Interaction. This chapter will focus on these sections from a design perspective, investigating how they can be implemented and which technologies can support their creation. Figure \# below shows these sections further broken down into separate sub-tasks.
+At the highest level the proposed tool will provide an Engineer with an emulated version of their physical network for use as a test bed for changes or disaster recovery simulations. At a more granular level the tool is split into four distinct sections: Network Discovery, Network Representation, Emulation and Network Interaction. This chapter will focus on these sections from a design perspective, investigating how they can be implemented and which technologies can support their creation. Figure 4.1 shows these sections further broken down into separate sub-tasks.
 
-\textit{Todo: Create a flowchart for the system}
+\begin{figure}[h!]
+	\caption{Step-wise Work Breakdown}
+	\centering
+	\includegraphics[width=1\textwidth]{work-Breakdown.png}
+\end{figure}
 
-\begin{center}
-\includegraphics[width=1\textwidth]{Work-Breakdown.png}
-\end{center}
+The tool will be of a linear format, current expectations will be that the tool will generate a simulation from given inputs, at which point the user will be able to interact with the simulation and feedback of their changes will be available. Due to this linearity, the tool's functionality is best shown as the activity diagram in Figure 4.2 
+
+\begin{sidewaysfigure}[h]
+	\caption{Activity Diagram}
+	\includegraphics[width=1\textwidth]{activityDiagram.png}
+\end{sidewaysfigure}
 
 \section{Network Creation}
 
@@ -274,6 +283,8 @@ From initial research, Python can be used to create REST network connections whi
 
 A second software that has been identified is CDP, a proprietary protocol created by Cisco which facilitates mapping of a network through local neighbour advertisements. This protocol is enabled on all Cisco devices by default, sending an advertisement to all local neighbours every 60 seconds. In this advertisement the device specifies it's hostname, whether the device is a router or a switch, the model number of the device and the interface on it's local side on which it is sending the advertisement. 
 
+From an advertisement the receiving device can piece together all the received information in order to build a picture of it's local network. An example of a CDP table for a device is shown below. From this table it can be seen that there are two local routers (R2 and R3) on the local interface FastEthernet0/0. In addition to this information, it can also be seen that R2 and R3 can see R1 on their FastEthernet0/0 interfaces, with further analysis, because R1 can see R2 and R3 on the same local interface it can be inferred that there is a switch connecting all three devices.
+
 \begin{lstlisting}
 R1# show cdp neighbors
 Capability Codes: R - Router, T - Trans Bridge, B - Source Route Bridge
@@ -285,6 +296,31 @@ R3               Fas 0/0            156         R S I     3725      Fas 0/0
 \end{lstlisting}
 
 \subsection{SNMP - Simple Network Management Protocol}
+
+An additional tool that will be used is SNMP, Simple Network Management Protocol \citep{case1989simple} is a protocol designed to allow access to sensors on a networked device. The protocol relies on a Management Information Base (MIB) which defined on a Vendor basis. Inside these MIBs there are defined Object Identifiers (OIDs) which relate to a specific sensor on the device. Access to this OIDs are managed on the device, requiring a community string which a plaintext password in SNMPv2 as a security device to prevent unauthorised access. Additional security is provided by only allowing Read-only access to OIDs which prevent malicious attacks to a system. For the purpose of this project there will only ever be a need for Read-only access, this is due to the fact that Read-Write is disabled on devices due to security concerns.
+
+When making a call to an SNMP Agent, specifying the OID and community string the device returns a plaintext response with the requested information. This can be parsed for and adapted for use in the Network Discovery portion, or alternatively can be used in the Network Feedback sections in order to understand forwarding information. The following output shows the returned information for a call to OID `.1.3.6.1.2.1.2.2.1.2', the OID which holds information relating to the interfaces on a device.
+
+\begin{lstlisting}
+rob@netman-server:~$ snmpwalk -v 2c -c public 172.30.0.1 .1.3.6.1.2.1.2.2.1.2
+IF-MIB::ifDescr.1 = STRING: FastEthernet0/0
+IF-MIB::ifDescr.2 = STRING: Serial0/0
+IF-MIB::ifDescr.3 = STRING: FastEthernet0/1
+IF-MIB::ifDescr.4 = STRING: Serial0/1
+IF-MIB::ifDescr.5 = STRING: Serial0/2
+IF-MIB::ifDescr.6 = STRING: Serial0/3
+IF-MIB::ifDescr.8 = STRING: Null0
+IF-MIB::ifDescr.13 = STRING: Loopback0
+IF-MIB::ifDescr.14 = STRING: NVI0
+\end{lstlisting}
+
+\subsection{SDN Sources using OnePK}
+
+OnePK is Cisco's current offering on the Software Defined Networking marketplace and allows a programmatic approach to controlling and extracting information from Cisco devices.
+
+Software Defined Networking (SDN) is a relatively new concept in the network space and although has not fully been adopted in real-world standards it can be used to extract information from routers with a relatively small footprint in production. Where traditionally a routing table of a Router would be extracted by using a tool such as a screen-scraper or SNMP, the routing table from a OnePK enable device can be requested using an API-like interface. This approach scales more efficiently than using CLI-scraping as the data can be requested through an constant connection rather than opening a telnet/SSH session. Data returned from a OnePK call can either return data in a structured format or as a copy of the text displayed on the CLI. In the case of the structured data the appropriate information can be accessed directly, in the case of screen data it can be extracted using regular expressions.
+
+With regards to this project, OnePK will be used in the Network Feedback section in order to process information such as forwarding tables. In addition to this, it can also be used to control the network as a whole, allowing the tool to make changes to interface states or costs in order to influence routing decisions.
 
 \chapter{Implementation}
 
@@ -368,10 +404,6 @@ Cisco Flexible Netflow is supported by Cisco IOSv and gives a more detailed view
 All interfaces within VIRL have a defined 'tap' interface on the VIRL Server, this can be used for packet captures. Using a packet capture in addition to the Netflow and SNMP will allow the tool to inspect the traffic at a much more granular level. One use case of this would be the testing of a routing change on an established session and how an application can deal with this.
 
 \textit{Note: Access to these tap interfaces may require access to the VIRL server in the admin role}
-
-\subsection{SDN Sources using OnePK}
-
-Software Defined Networking (SDN) is a relatively new concept in the network space and although has not fully been adopted in real-world standards it can be used to extract information from routers with a relatively small footprint in production. Where traditionally a routing table of a Router would be extracted by using a tool such as a screen-scraper or SNMP, the routing table from a OnePK enable device can be requested using an API-like interface. This approach scales more efficiently than using CLI-scraping as the data can be requested through an constant connection rather than opening a telnet/SSH session. Data returned from a OnePK call can either return data in a structured format or as a copy of the text displayed on the CLI. In the case of the structured data the appropriate information can be accessed directly, in the case of screen data it can be extracted using regular expressions.
  
 
 \section{Testing Scenarios}
