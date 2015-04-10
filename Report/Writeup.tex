@@ -227,11 +227,290 @@ The tool will allow a user to interact with their emulated network in a variety 
 
 Interaction with network components will provide feedback to the user through the graphical interface provided in the 'Network Representation' section. This section of the tool will display the network dynamically, using information gained from devices such as the forwarding table or bandwidth usage on a link. This information will be interpreted by the graphing software and will provide visual feedback of a network change, such as using coloured links to show a forwarding path through a network.
 
-\section{Network Requirements}
+Connection to the emulation will be provided through a server connected to both a management network within the emulation and a public facing interface for connections from the internet. This server will facilitate the traditional command-line based connections by acting as a jumphost into the network. In addition to command-line access this server will also host a python-based web API which will allow the more unconventional methods of interaction through using networking APIs such as Cisco's OnePK tool set.
 
-\textit{Todo: Need to formally document these}
+\section{Requirements}
+
+\begin{tabular}{|l|p{12cm}|}
+	\hline Requirement ID: & 1 \\ 
+	\hline Description: & The system must be able to discover a physical network layout \\ 
+	\hline Rationale: & A user needs to be able to discover and emulate an undocumented network \\ 
+	\hline Type: & Functional \\ 
+	\hline Design Constraint: & No \\ 
+	\hline Fit Criteria: & A user can create an accurate model of their local network \\ 
+	\hline 
+\end{tabular}
+\newline
+\vspace*{0.5 cm}
+\newline
+\begin{tabular}{|l|p{12cm}|}
+	\hline Requirement ID: & 2 \\ 
+	\hline Description: & The system must accept existing network information \\ 
+	\hline Rationale: & A user needs to be able to create a emulation based on a well-documented network \\ 
+	\hline Type: & Functional \\ 
+	\hline Design Constraint: & No \\ 
+	\hline Fit Criteria: & A user can create an accurate model based on existing network information \\ 
+	\hline 
+\end{tabular} 
+\newline
+\vspace*{0.5 cm}
+\newline
+\begin{tabular}{|l|p{12cm}|}
+	\hline Requirement ID: & 3 \\ 
+	\hline Description: & The system will discover Cisco Devices \\ 
+	\hline Rationale: & The tool needs to discover unknown Cisco devices on a network \\ 
+	\hline Type: & Functional \\ 
+	\hline Design Constraint: & No \\ 
+	\hline Fit Criteria: & All devices on the local topology will be discovered \\ 
+	\hline 
+\end{tabular}
+\newline
+\vspace*{0.5 cm}
+\newline
+\begin{tabular}{|l|p{12cm}|}
+	\hline Requirement ID: & 4 \\ 
+	\hline Description: & The system will extract configurations from Cisco devices \\ 
+	\hline Rationale: & Configuration files are required in order to emulate the behaviour of devices \\ 
+	\hline Type: & Functional \\ 
+	\hline Design Constraint: & No \\ 
+	\hline Fit Criteria: & The configuration of each discovered device is extracted \\ 
+	\hline 
+\end{tabular}
+\newline
+\vspace*{0.5 cm}
+\newline
+\begin{tabular}{|l|p{12cm}|}
+	\hline Requirement ID: & 5 \\ 
+	\hline Description: & The system will produce a document detailing the physical layout of the network \\ 
+	\hline Rationale: & A topology document will allow the tool to visually represent a network \\ 
+	\hline Type: & Functional \\ 
+	\hline Design Constraint: & No \\ 
+	\hline Fit Criteria: & A document is produced which details the topology \\ 
+	\hline 
+\end{tabular}
+\newline
+\vspace*{0.5 cm}
+\newline
+\begin{tabular}{|l|p{12cm}|}
+	\hline Requirement ID: & 6 \\ 
+	\hline Description: & A topology map must be produced in less than 1 minute \\ 
+	\hline Rationale: & Allows the discovery of a network to be efficient so it is of use to a network engineer \\ 
+	\hline Type: & Non-functional \\ 
+	\hline Design Constraint: & No \\ 
+	\hline Fit Criteria: & Device discovery takes one minute or less \\ 
+	\hline 
+\end{tabular}
+\newline
+\vspace*{0.5 cm}
+\newline
+\begin{tabular}{|l|p{12cm}|}
+	\hline Requirement ID: & 7 \\ 
+	\hline Description: & Router configurations must be extracted in an efficient method \\ 
+	\hline Rationale: & Lessens the time taken to produce a working emulation \\ 
+	\hline Type: & Non-functional \\ 
+	\hline Design Constraint: & No \\ 
+	\hline Fit Criteria: & Configuration Extraction takes three minutes or less \\ 
+	\hline 
+\end{tabular}
+\newline
+\vspace*{0.5 cm}
+\newline
+\begin{tabular}{|l|p{12cm}|}
+	\hline Requirement ID: & 8 \\ 
+	\hline Description: & Connections to Production devices must not compromise security \\ 
+	\hline Rationale: & Production devices can be left vulnerable if security is lessened \\ 
+	\hline Type: & Non-functional \\ 
+	\hline Design Constraint: & Yes \\ 
+	\hline Fit Criteria: & The tool requires no additional access to systems when compared to an industry standard tool \\ 
+	\hline 
+\end{tabular}
+\newline
+\vspace*{0.5 cm}
+\newline
+\begin{tabular}{|l|p{12cm}|}
+	\hline Requirement ID: & 9 \\ 
+	\hline Description: & Any Cisco device can be represented within a emulation \\ 
+	\hline Rationale: & A device must be able to be represented in an emulation regardless of model \\ 
+	\hline Type: & Functional \\ 
+	\hline Design Constraint: & No \\ 
+	\hline Fit Criteria: & Any standard Cisco router will be represented in an emulation \\ 
+	\hline 
+\end{tabular}
+\newline
+\vspace*{0.5 cm}
+\newline
+\begin{tabular}{|l|p{12cm}|}
+	\hline Requirement ID: & 10 \\ 
+	\hline Description: & Network Discover will be able to cope with non-router devices \\ 
+	\hline Rationale: & Not every network will be a collection solely of interconnected routers \\ 
+	\hline Type: & Functional \\ 
+	\hline Design Constraint: & No \\ 
+	\hline Fit Criteria: & The discover will cope with Layer-2 devices such as switches and will deal with them effectively \\ 
+	\hline 
+\end{tabular}
+\newline
+\vspace*{0.5 cm}
+\newline
+\begin{tabular}{|l|p{12cm}|}
+	\hline Requirement ID: & 11 \\ 
+	\hline Description: & All interface types will be represented in an emulation \\ 
+	\hline Rationale: & Cisco devices have multiple types of interfaces that need to be included \\ 
+	\hline Type: & Functional \\ 
+	\hline Design Constraint: & No \\ 
+	\hline Fit Criteria: & Any standard Cisco interface will be represented in a emulation \\ 
+	\hline 
+\end{tabular}
+\newline
+\vspace*{0.5 cm}
+\newline
+\begin{tabular}{|l|p{12cm}|}
+	\hline Requirement ID: & 12 \\ 
+	\hline Description: & Physical interfaces will be converted into an equivalent weighting in the emulation \\ 
+	\hline Rationale: & Different interface types will have different characteristics which will influence routing \\ 
+	\hline Type: & Functional \\ 
+	\hline Design Constraint: & No \\ 
+	\hline Fit Criteria: & An interface will influence routing in the same way both in real hardware and in a emulation \\ 
+	\hline 
+\end{tabular}
+\newline
+\vspace*{0.5 cm}
+\newline
+\begin{tabular}{|l|p{12cm}|}
+	\hline Requirement ID: & 13 \\ 
+	\hline Description: & Configurations will be converted into an equivalent emulation configuration \\ 
+	\hline Rationale: & The emulation must include exactly the same features and characteristics in order to be of use as a testing platform \\ 
+	\hline Type: & Functional \\ 
+	\hline Design Constraint: & No \\ 
+	\hline Fit Criteria: & There will be no configuration loss in the emulation when compared to the real hardware \\ 
+	\hline 
+\end{tabular}
+\newline
+\vspace*{0.5 cm}
+\newline
+\begin{tabular}{|l|p{12cm}|}
+	\hline Requirement ID: & 14 \\ 
+	\hline Description: & The tool will produce a Cisco VIRL file  \\ 
+	\hline Rationale: & The emulation engine, Cisco VIRL represents a topology in a VIRL file \\ 
+	\hline Type: & Functional \\ 
+	\hline Design Constraint: & No \\ 
+	\hline Fit Criteria: & A VIRL file defining the topology is produced \\ 
+	\hline 
+\end{tabular}
+\newline
+\vspace*{0.5 cm}
+\newline
+\begin{tabular}{|l|p{12cm}|}
+	\hline Requirement ID: & 15 \\ 
+	\hline Description: & The produced emulation file will be a valid VIRL configuration file  \\ 
+	\hline Rationale: & The produced file will be passed to an external process for emulation and therefore must be complete and valid \\ 
+	\hline Type: & Non-Functional \\ 
+	\hline Design Constraint: & Yes \\ 
+	\hline Fit Criteria: & All produced VIRL files will be accepted as valid by the VIRL engine \\ 
+	\hline 
+\end{tabular}
+\newline
+\vspace*{0.5 cm}
+\newline
+\begin{tabular}{|l|p{12cm}|}
+	\hline Requirement ID: & 16 \\ 
+	\hline Description: & The tool will automatically produce a simulation when a valid VIRL file is created  \\ 
+	\hline Rationale: & An emulation needs to be produced without any input by the user or any third-part GUI \\ 
+	\hline Type: & Functional \\ 
+	\hline Design Constraint: & No \\ 
+	\hline Fit Criteria: & An emulation is created as part of the tool running  \\ 
+	\hline 
+\end{tabular}
+\newline
+\vspace*{0.5 cm}
+\newline
+\begin{tabular}{|l|p{12cm}|}
+	\hline Requirement ID: & 17 \\ 
+	\hline Description: & The emulated network will be accessible through the internet  \\ 
+	\hline Rationale: & The emulation needs a method of access to the network \\ 
+	\hline Type: & Functional \\ 
+	\hline Design Constraint: & No \\ 
+	\hline Fit Criteria: & The emulation is available online  \\ 
+	\hline 
+\end{tabular}
+\newline
+\vspace*{0.5 cm}
+\newline
+\begin{tabular}{|l|p{12cm}|}
+	\hline Requirement ID: & 18 \\ 
+	\hline Description: & The tool will provide a single server as a point of entry to the emulation  \\ 
+	\hline Rationale: & Having multiple publicly available devices on the internet poses a security risk \\ 
+	\hline Type: & Functional \\ 
+	\hline Design Constraint: & No \\ 
+	\hline Fit Criteria: & The tool provides one single publicly routable ip address for access  \\ 
+	\hline 
+\end{tabular}
+\newline
+\vspace*{0.5 cm}
+\newline
+\begin{tabular}{|l|p{12cm}|}
+	\hline Requirement ID: & 19 \\ 
+	\hline Description: & The user will be able to view a diagram of the discovered network before emulation  \\ 
+	\hline Rationale: & A user will want to check the discovered network is correct before creating an emulation \\ 
+	\hline Type: & Functional \\ 
+	\hline Design Constraint: & No \\ 
+	\hline Fit Criteria: & A diagram is produced before the network is emulated  \\ 
+	\hline 
+\end{tabular}
+\newline
+\vspace*{0.5 cm}
+\newline
+\begin{tabular}{|l|p{12cm}|}
+	\hline Requirement ID: & 20 \\ 
+	\hline Description: & The emulated network will contain a separate management network for the external server to communicate on \\ 
+	\hline Rationale: & A management network will ensure that any management tools will not interfere with the emulation routing \\ 
+	\hline Type: & Functional \\ 
+	\hline Design Constraint: & No \\ 
+	\hline Fit Criteria: & The management of the network is on an entirely separate network to the emulation  \\ 
+	\hline 
+\end{tabular}
+\newline
+\vspace*{0.5 cm}
+\newline
+\begin{tabular}{|l|p{12cm}|}
+	\hline Requirement ID: & 21 \\ 
+	\hline Description: & The user will be able to interact with an emulation in a conventional way \\ 
+	\hline Rationale: & A user will want to interact with the emulation in a familiar way \\ 
+	\hline Type: & Functional \\ 
+	\hline Design Constraint: & No \\ 
+	\hline Fit Criteria: & The user will have command-line access to any router produced in the emulation  \\ 
+	\hline 
+\end{tabular}
+\newline
+\vspace*{0.5 cm}
+\newline
+\begin{tabular}{|l|p{12cm}|}
+	\hline Requirement ID: & 22 \\ 
+	\hline Description: & The user will be able to influence the network in non conventional ways \\ 
+	\hline Rationale: & The tool will provide other methods of influencing the emulated network \\ 
+	\hline Type: & Functional \\ 
+	\hline Design Constraint: & No \\ 
+	\hline Fit Criteria: & The user will influence the network in methods other than CLI  \\ 
+	\hline 
+\end{tabular}
+\newline
+\vspace*{0.5 cm}
+\newline
+\begin{tabular}{|l|p{12cm}|}
+	\hline Requirement ID: & 23 \\ 
+	\hline Description: & The network diagram will produce visual feedback representing the current state of the network \\ 
+	\hline Rationale: & The user will want to see methods other than the CLI for understanding the behaviour of the network \\ 
+	\hline Type: & Functional \\ 
+	\hline Design Constraint: & No \\ 
+	\hline Fit Criteria: & Visual feedback is produced on the CLI  \\ 
+	\hline 
+\end{tabular}
+\newline
+\vspace*{0.5 cm}
+\newline
 
 \section{Risks}
+
+The project has the following risks identified which could impact development:
 
 \begin{itemize}
   \item{Constraints on access to University infrastructure}
@@ -248,7 +527,7 @@ Interaction with network components will provide feedback to the user through th
   \end{itemize}
   \item{Requirement of Python in Cisco Development}
   \begin{itemize}
-    \item{Cisco products (In particular onePK) require a knowledge of Python. This is a new language that I have not developed in. Therefore there may be added difficulty in understanding its function.}
+    \item{Cisco products (In particular onePK) require a knowledge of Python. This is a new language that is not well known to the developer. Therefore there may be added difficulty in understanding its function.}
   \end{itemize}
   \item{Risk of hardware failure}
   \begin{itemize}
