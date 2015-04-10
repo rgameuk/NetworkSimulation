@@ -80,9 +80,14 @@ if __name__ == "__main__":
 
 		for obj in p.find_objects(r'^line vty'):
 			obj.delete(recurse=True)
+		for obj in p.find_objects(r'^enable password'):
+			obj.delete()
+		for obj in p.find_objects(r'^login password'):
+			obj.delete()
 
-		p.insert_before('end', 'login cisco password 0 cisco', exactmatch=True, atomic=False)
-		p.insert_after('login cisco password 0 cisco', 'line vty 0 4', exactmatch=True, atomic=False)
-		p.insert_after('line vty 0 4', 'login local', exactmatch=True, atomic=False)
-		p.insert_after('login local', 'transport input telnet ssh', exactmatch=True, atomic=False)
+		p.insert_before('end', 'line vty 0 4', exactmatch=True, atomic=False)
+		p.insert_after('line vty 0 4', ' no login', exactmatch=True, atomic=False)
+		p.insert_after(' no login', ' privilege level 15', exactmatch=True, atomic=False)
+		p.insert_after('line vty 0 4', ' transport input telnet ssh', exactmatch=True, atomic=False)
+
 		p.save_as('./config-files/' + key.lower() + '.edited')
