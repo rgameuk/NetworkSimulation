@@ -2,9 +2,11 @@
 import os, requests, sys, json
 import telnetlib
 import time
+import paramiko
+from paramikoe import SSHClientInteraction
 
 
-def updateServerIP(serverManIP, serverExtIP, virlHost, consolePort, SNATAddress):
+def setupServer(serverManIP, serverExtIP, virlHost, consolePort, SNATAddress, ipDictionary):
 	username = 'cisco'
 	password = 'cisco'
 	interfaceCommand = 'sudo ifconfig eth1 up '+ serverExtIP + ' netmask 255.255.255.0'
@@ -26,54 +28,22 @@ def updateServerIP(serverManIP, serverExtIP, virlHost, consolePort, SNATAddress)
 	telnet.write(password + '\n')
 	response = telnet.read_until('cisco@virl-sim-server:~$')
 	telnet.write(defaultGWCommand + '\n')
-	#print response
 	response = telnet.read_until('cisco@virl-sim-server:~$')
-	#print response
 	telnet.write('sudo chmod 666 /etc/resolv.conf' + '\n')
 	response = telnet.read_until('cisco@virl-sim-server:~$')
-	#print response
 	telnet.write(nameserverOneCommand + '\n')
 	response = telnet.read_until('cisco@virl-sim-server:~$')
-	#print response
 	telnet.write(nameserverTwoCommand + '\n')
 	response = telnet.read_until('cisco@virl-sim-server:~$')
-	#print response
 	telnet.write('sudo chmod 644 /etc/resolv.conf' + '\n')
 	response = telnet.read_until('cisco@virl-sim-server:~$')
-	#print response
+	lineNumber = 3
+	for key, val in ipDictionary.iteritems():
+		telnet.write('sudo sed -i "' + str(lineNumber) + 'i ' + val + ' ' + key + '" /etc/hosts' + '\n')
+		response = telnet.read_until('cisco@virl-sim-server:~$')
+		lineNumber +=1
 	telnet.close()
 	print 'virl-sim-server interfaces updated. Server available @ ' + SNATAddress
-
-def addDeviceAccounts(virlHost, devicePortDict):
-	username = 'cisco'
-	password = 'cisco'
-	enablePassword = 'cisco'
-	accountCommand = 'username ' + username + ' password ' + password
-	enableCommand = 'enable password ' + enablePassword
-	
-	for key, val in devicePortDict.iteritems():
-		print key, val
-		telnet = telnetlib.Telnet(virlHost, val)             
-		telnet.write('\n')
-		response = telnet.read_until(key+'#')
-		print response
-		telnet.write('configure terminal'+ '\n')
-		response = telnet.read_until(key + '(config)#')
-		print response
-		telnet.write(accountCommand + '\n')
-		response = telnet.read_until(key + '(config)#')
-		telnet.write(enableCommand + '\n')
-		response = telnet.read_until(key + '(config)#')
-		telnet.write('end' + '\n')
-		response = telnet.read_until(key+'#')
-		print response
-		telnet.write('write memory' + '\n')
-		#response = telnet.read_until(key+'#')
-		#print response
-		telnet.close()
-	print 'Accounts added to devices'
-	print 'Username: ' + username
-	print 'Password: ' + password
 
 if __name__ == "__main__":
 	virlHost = "158.125.102.75"
@@ -92,7 +62,6 @@ if __name__ == "__main__":
 	hostInformation = requests.get(hostsURL, auth=(username, password))
 	hostJSON = json.loads(hostInformation.text)
 	ipDictionary = {}
-	devicePortDict = {}
 	serverManIP = ''
 	serverExtIP = ''
 	SNATAddress = ''
@@ -109,11 +78,7 @@ if __name__ == "__main__":
 			if ((devKey == 'NodeSubtype') and (devVal == 'IOSv')):
 				hostname = rawDeviceInfo['NodeName']
 				managementIP = rawDeviceInfo['managementIP']
-				deviceConsolePort = rawDeviceInfo['managementIP']
 				ipDictionary[str(hostname)] = str(managementIP)
-				deviceConsolePort = rawDeviceInfo['PortConsole']
-				print deviceConsolePort
-				devicePortDict[str(hostname)] = int(deviceConsolePort)
 			if ((devKey == 'NodeName') and (devVal == 'virl-sim-server')):
 				serverManIP = rawDeviceInfo['managementIP']
 				serverExtIP = rawDeviceInfo['internalAddr']
@@ -122,6 +87,5 @@ if __name__ == "__main__":
 			if 'lxc-flat.External Address' in key:
 				if (devKey == 'managementIP'):
 					lxcAddress = devVal
-	print devicePortDict
-	updateServerIP(serverManIP, serverExtIP, virlHost, consolePort, SNATAddress)
-	#addDeviceAccounts(virlHost, devicePortDict)
+	setupServer(serverManIP, serverExtIP, virlHost, consolePort, SNATAddress, ipDictionary)
+
