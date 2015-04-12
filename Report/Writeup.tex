@@ -12,8 +12,62 @@
 \usepackage{comment}
 
 
+
+
+
+\usepackage{color}
+\usepackage{listings}
+\usepackage{setspace}
+
+\definecolor{Code}{rgb}{0,0,0}
+\definecolor{Decorators}{rgb}{0.5,0.5,0.5}
+\definecolor{Numbers}{rgb}{0.5,0,0}
+\definecolor{MatchingBrackets}{rgb}{0.25,0.5,0.5}
+\definecolor{Keywords}{rgb}{0,0,1}
+\definecolor{self}{rgb}{0,0,0}
+\definecolor{Strings}{rgb}{0,0.63,0}
+\definecolor{Comments}{rgb}{0,0.63,1}
+\definecolor{Backquotes}{rgb}{0,0,0}
+\definecolor{Classname}{rgb}{0,0,0}
+\definecolor{FunctionName}{rgb}{0,0,0}
+\definecolor{Operators}{rgb}{0,0,0}
+\definecolor{Background}{rgb}{0.98,0.98,0.98}
+
+\lstnewenvironment{python}[1][]{
+	\lstset{
+		numbers=left,
+		numberstyle=\footnotesize,
+		numbersep=1em,
+		xleftmargin=1em,
+		framextopmargin=2em,
+		framexbottommargin=2em,
+		showspaces=false,
+		showtabs=false,
+		showstringspaces=false,
+		frame=l,
+		tabsize=4,
+		% Basic
+		basicstyle=\ttfamily\small\setstretch{1},
+		backgroundcolor=\color{Background},
+		language=Python,
+		% Comments
+		commentstyle=\color{Comments}\slshape,
+		% Strings
+		stringstyle=\color{Strings},
+		morecomment=[s][\color{Strings}]{"""}{"""},
+		morecomment=[s][\color{Strings}]{'''}{'''},
+		% keywords
+		morekeywords={import,from,class,def,for,while,if,is,in,elif,else,not,and,or,print,break,continue,return,True,False,None,access,as,,del,except,exec,finally,global,import,lambda,pass,print,raise,try,assert},
+		keywordstyle={\color{Keywords}\bfseries},
+		% additional keywords
+		morekeywords={[2]@invariant},
+		keywordstyle={[2]\color{Decorators}\slshape},
+		emph={self},
+		emphstyle={\color{self}\slshape},
+		%
+	}}{}
+
 \lstset{frame=tb,
-  language=Python,
   aboveskip=3mm,
   belowskip=3mm,
   showstringspaces=false,
@@ -603,29 +657,142 @@ With regards to this project, OnePK will be used in the Network Feedback section
 
 \chapter{Implementation}
 
-\section{Router Discovery:}
+\section{Lab Design:}
 
-\begin{center}
+\begin{figure}[h!]
+\caption{GNS3 Topology}
+\centering
 \includegraphics[width=0.8\textwidth]{Lab-Design.png}
-\end{center}
+\end{figure}
 
 A key feature of the simulation tool is the ability to replicate a 'Real-world' network in emulated space. In order to gather the information required for this feature an extra tool set for Network Discovery has been created. This allows a user to discover devices on the network and extract interface information and router configurations in order to build an emulated instance of the network.
 
-For the development of this Router Discovery tool the above topology was created and used. As explained earlier this is implemented within GNS3 to utilise it's simulation of real IOS images. The above shows a Topology I have created as a use-case for simulation testing, however in order to add the Network Discovery tool I have included an Ubuntu 14.04 server and a connection to the Internet (Cloud 1).
+For the development of this Router Discovery tool the above topology was created and used. As explained earlier this is implemented within GNS3 to utilise it's simulation of real IOS images. The above shows a Topology I have created as a use-case for emulation testing, an Ubuntu 14.04 server is also attached to the topology will which be used for the Network Discovery portion of the tool. In addition to this server, a `cloud' object is also connected, this provides internet access to the Lab through a bridged interface on the local machine.
 
 The Ubuntu server is implemented using VirtualBox integration within GNS3 and allows direct connection to the 172.30.0.0/24 network. This Ubuntu server will hold the tool used for Router Discovery and Configuration Extraction. As this server is sitting on the same private network as all of the routers this allows me to find all the routers using defined ip addresses or through using CDP.
 
 The connection to the Internet is provided through the cloud in the diagram above. This is inbuilt functionality within GNS3 which allows the topology to interface with the local host’s connection. This is implemented by adding a loopback to the local PC and bridging the internet connection to this loopback. GNS3 then connects to this loopback address and provides an interface to the Internet in the form of the Cloud object. Once this connectivity is provided the topology has a defined router which is used for internet connections, in this scenario R1 provides the connection. This router is then configured to provide dhcp to any servers on the local subnet, providing a default gateway and DNS Servers for the connected hosts. This router is also configured to provide NAT services in order to allow these private addresses to communicate to the outside world. Once internet connectivity is established the system can deploy.
 
-Data from these devices will be extracted using an SNMP agent. Cisco Discovery Protocol (CDP) is a protocol created to collate important information about a Cisco device and broadcast it out to the network. For example the {\tt show cdp neighbours} command on R1 above yields the following information:
+The base lab used for development has been designed to contain different elements of networks that may be faced in a real-world scenario. The routing of the network is provided via OPSF, a Distance Vector protocol which is used for interior routing in large enterprise. The network is broken into four OSPF areas, these segment the network and prevent routing tables from becoming too large. A second characteristic of this lab is its inclusion of switches, these are `dumb' switches provided by GNS3 and are not running the Cisco IOS, however they introduce additional complexity to the network which the tool will need to deal with efficiently. The final characteristic of the network is the types of interfaces. As seen in Figure 5.1 the topology includes two distinct types, the first is the expected FastEthernet interfaces which is used for the majority of modern connections, the second is a more traditional Serial interface which would be used for long distance leased-line connections. The variety of interfaces will need to be included in the emulation and their behaviour will also need to be reproduced as it will influence routing decisions.
 
+\section{Network Documentation}
 
+One key feature of the documentation of a network is the data structure that will define it. As discussed in the design sections, a network can be defined with two documents, the device configurations and the physical layout of the connections. The tool provides the latter through a python object referred to in the code as 'topology' is of class routerList. At it's highest level this object is a list of the devices that are on the network, this code for the class is shown below:
 
-From the above I can see that R1 is directly connected to two routers, R2 and R3. I can also see which interface each side of the connection is on. As both are currently sitting on {\tt Fas 0/0} this indicates that they are both connected to a switch. This is valuable information when understanding the topology as it defines which cables are connected where.
+\begin{python}
+	class routerList(object):
+		def __init__(self, routerList):
+			self.routerList = []
+	
+		def addRouter(self, routerEntry):
+			self.routerList.append(routerEntry)
+	
+	class router(object):
+		def __init__(self, cdp_entries):
+			self.cdp_entries = []
+			self.hostname = ''
+			self.ipAddress = ''
+			self.capabilities = ''
+	
+		def addCdpEntry(self, cdp_entry):
+			self.cdp_entries.append(cdp_entry)
+	
+		def addHostname(self, hostname):
+			self.hostname = hostname
+	
+		def addIpAddress(self, ipAddress):
+			self.ipAddress = ipAddress
+	
+		def addCapability(self, capability):
+			self.capabilities = capability
+	
+		def removeCDPEntry(self, interfaceName):
+			#Updates cdp_entries to include only those that DO NOT match interfaceName
+			self.cdp_entries = [cdpEntry for cdpEntry in self.cdp_entries if cdpEntry.srcPort != interfaceName]
+\end{python}
 
-This information is useful as it allows a user to view what devices are directly connected without having access to an overall topology. However, the need for physically connecting to the device and running commands on the CLI is  not optimal for an automated system as is the one being created. In addition to the process of logging on to a router, there is also the credentials required to facilitate this access. This may be an extra method of access that a Network Administrator would not be comfortable giving to an automated system. As a resolution to these issues the tool will utilise SNMP as a way of polling devices, in particular a Cisco MIB called CISCO-CDP-MIB allows this information to be gathered and accessed using SNMP. From this MIB I can gather the hostname and ip address of each neighbour to a device and from this I can then poll the neighbour to find details of his neighbour. This can be done programmatically until no further neighbours are found.
+As seen above, routerList is a list of all devices on the network. At a lower level, a router is any device found on the topology, it is comprised of a Hostname, IP Address, capabilities and a list of CDP entries for the device. CDP Entries are used to define the physical connection on the topology and when fully processed each interface will have a single CDP entry per interface. A more detailed view of a CDP entry is as follows:
 
-Once all the required routers are discovered the tool will then begin to implement extraction of each router's configurations. It will do this by using SSH to connect to each Router that has been identified and back-up it's starting configuration to the server. The server will then have knowledge of the network topology from the SNMP data and a copy of each Router configuration. From here a valid .virl file can be created of the topology. 
+\begin{python}
+		class cdpEntry(object):
+			def __init__(self, hostname):
+				self.hostname = ''
+				self.srcPort = ''
+				self.dstPort = ''
+				self.ipAddress = ''
+		
+			def addHostname(self, hostname):
+				self.hostname = hostname
+			def addIpAddress(self, ipAddress):
+				self.ipAddress = ipAddress
+			def addSrcPort(self, srcPort):
+				self.srcPort = srcPort
+			def addDstPort(self, dstPort):
+				self.dstPort = dstPort
+\end{python}
+
+As shown above, a CDP entry comprises of a Hostname, IP Address and source and destination ports. This information maps the links in the topology. In this instance, the Hostname and IP Address relate to the remote device on the link. This information allows the routerList object to hold the full physical layout of the topology.
+
+\subsection{Network Discovery}
+
+Network Discovery allows the user to dynamically understand the topology of local network. The user has additional options available when taking this route to simulation, if the user second the specify 
+
+ As this tool focuses on the emulation of Cisco devices it allows the tool to utilise Cisco standard technologies as a method of interacting with devices. One such technology is Cisco Discovery Protocol (see 4.8.4) which is a protocol enabled on all Cisco devices allowing them to understand the local network. This protocol is sent as a broadcast on the device's local network, the tool takes advantage of this fact as it can `sniff' for a CDP packet in order to discover the closest Cisco Router. To do this, the tool uses an external program called Cisco Discovery Protocol Reporter (CDPR)  \citep{CDPR} to listen on a local interface for a CDP Packet. Once a packet is seen, CDPR returns hostname and IP Address of the device that created the packet.
+
+\begin{python}
+def getLocalCDPInfo(baseRouter):
+	#Function listens on interface for a CDP packet and creates a router if successful. Script closes if no packet found
+	try: #Catches exception generated when CDPR returns null (CDP packet not seen)
+		cdpdiscovery = subprocess.check_output(["cdpr", "-d", "eth0", "-t", "61"])
+		#Starts subprocess for CDP, timeout is set to 61 as default CDP timer is 60
+		#CDP returns the information in lines, below code breaks in into a list and processes the information 
+		cdpList = string.split(cdpdiscovery,'\n')
+		cdpValues = [s for s in cdpList if re.search('value', s)]
+		for idx, val in enumerate(cdpValues):
+			cdpValues[idx] = val.replace(" ", "")
+		for idx, val in enumerate(cdpValues):
+			cdpValues[idx] = val.partition(':')[2]
+		#The below code creates a router object for the baserouter and returns it to main
+		if checkNetworks == True:
+			#Networks ranges have been specified for discovery
+			notInNetwork = True
+			ipAddress = str(cdpValues[1]) + '/32'
+			#Create string to hold device IP address
+			for idx, val in enumerate(specifiedNetworks):
+				#Check each network that has been specified
+				if ipaddr.IPv4Network(ipAddress) in val:
+					#Check the ip address of the device is inside the network
+					#If it is, create a device for it
+					notInNetwork = False
+					baseRouter.addHostname(cdpValues[0])
+					baseRouter.addIpAddress(cdpValues[1])
+					deviceCapability = getCapabilities(baseRouter)
+					baseRouter.addCapability(deviceCapability)
+					return baseRouter
+			if notInNetwork == True:
+				#If the device is not in the network, throw an error
+				print 'Local device is not in specied networks. Aborting Network Discovery'
+				sys.exit()
+		else:
+		#Networks have not been specified, create an object for the device
+		baseRouter.addHostname(cdpValues[0])
+		baseRouter.addIpAddress(cdpValues[1])
+		deviceCapability = getCapabilities(baseRouter)
+		baseRouter.addCapability(deviceCapability)
+		return baseRouter
+	except:
+		#Exception thrown, this will occur when no CDP packet is seen within the timeout of CDPR
+		print 'No CDP packet discovered. Aborting Network Discovery'
+		sys.exit()
+\end{python}
+
+The above code uses a python library called os, this allows the code to create a subprocess on the server in order to run external programs. This subprocess runs CDPR on the eth0 interface and then returns the output from the subprocces pipe, at which point python saves this to a variable and processes this variable until only the Hostname, IP Address and capabilities of the device remain. Once this information is extracted the tool creates a base router, this is used as a starting point of the Network Discovery process.
+
+Error handling occurs in this function through the use of a timeout in CDPR. The default send time for a CDP process on a Cisco device is 60 seconds so it can be assumed that if not packet is received after 61 seconds there is no local Cisco device on the network, when this error is hit the tool notifies the user and then closes the script entirely as no further processing can be done.
+
+One caveat of using CDPR as a tool is its requirement of root privileges in order to look at network traffic, because of this the this portion of the tool requires superuser access. on the host. One alternative to this was to write the code with an expect module, which would allow the current account to request root privileges. However this would require the script to know the local user's password, this is insecure and was deemed too much of a security risk.
+
+Once a baseRouter is created, this object is used as a point of entry into the network
 
 \section{VIRL File Creation}
 
