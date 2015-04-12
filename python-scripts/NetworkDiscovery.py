@@ -151,7 +151,10 @@ def getLocalCDPInfo(baseRouter):
 		sys.exit()
 		
 def getCDPHostnames(router):
+	#Function makes an SNMP call to the device defined by router. It then processes the returned data into a list of Hostnames which is returned to the updateRouters function
+	#Makes SNMP call and holds the output in a variable
 	hostnameOutput=subprocess.check_output(["snmpwalk", "-v", "2c", "-c", "public", router.ipAddress, "1.3.6.1.4.1.9.9.23.1.2.1.1.6"])
+	#Parse the output until only the IP addresses remain
 	hostnameOutput = string.split(hostnameOutput, '\n')
 	for idx, val in enumerate(hostnameOutput):
 		hostnameOutput[idx] = val.partition('"')[2]
@@ -161,6 +164,7 @@ def getCDPHostnames(router):
 	return hostnameOutput
 
 def getCapabilities(router):
+	#Function makes an SNMP call to the device defined by router. Returns whether the device is a router or a switch
 	capabilityOutput = subprocess.check_output(["snmpwalk", "-v", "2c", "-c", "public", router.ipAddress, ".1.3.6.1.2.1.4.1"])
 	if "forwarding(1)" in capabilityOutput:
 		deviceCapability = 'Router'
@@ -169,6 +173,7 @@ def getCapabilities(router):
 	return deviceCapability
 
 def getCDPIPs(router):
+	#Function makes a call to device which returns a list of IP addresses in HEX format, the are converted to decimal and returned as list
 	ipAddressOutput=subprocess.check_output(["snmpwalk", "-v", "2c", "-c", "public", router.ipAddress, "1.3.6.1.4.1.9.9.23.1.2.1.1.4"])
 	ipAddressOutput = string.split(ipAddressOutput, '\n')
 	for idx, val in enumerate(ipAddressOutput):
@@ -176,6 +181,7 @@ def getCDPIPs(router):
 	for idx, val in enumerate(ipAddressOutput):
 		ipAddressOutput[idx] = val[:-1]
 	ipAddressOutput = filter(None, ipAddressOutput)
+	#Converts the Hex octets into binary octets
 	for idx, val in enumerate(ipAddressOutput):
 		firstOct = str(int(ipAddressOutput[idx][:2], 16))
 		secondOct = str(int(ipAddressOutput[idx][3:5], 16))
@@ -186,6 +192,7 @@ def getCDPIPs(router):
 	return ipAddressOutput
 
 def getCDPDstInterfaces(router):
+	#Function makes an SNMP call to the device defined by router. Returns a list of remote interfaces
 	interfaceOutput=subprocess.check_output(["snmpwalk", "-v", "2c", "-c", "public", router.ipAddress, ".1.3.6.1.4.1.9.9.23.1.2.1.1.7"])
 	interfaceOutput = string.split(interfaceOutput, '\n')
 	for idx, val in enumerate(interfaceOutput):
@@ -196,10 +203,13 @@ def getCDPDstInterfaces(router):
 	return interfaceOutput
 
 def getCdpSrcInterfaces(router):
+	#Function returns a list of local interfaces of connections to the device. 
+	#The local interface is contained in the OID of a remote CDP connection. Therefore the local interface ID needs to be found first
 	localIntIDList = subprocess.check_output(["snmpwalk", "-v", "2c", "-c", "public", router.ipAddress, ".1.3.6.1.2.1.2.2.1.2"])
 	localIntList = localIntIDList
 	interfaceOutput=subprocess.check_output(["snmpwalk", "-v", "2c", "-c", "public", router.ipAddress, ".1.3.6.1.4.1.9.9.23.1.2.1.1.7"])
 	intDict = {}
+	#Partition the local interface information until the interface IDs remain
 	localIntIDList = string.split(localIntIDList, '\n')
 	for idx, val in enumerate(localIntIDList):
 		localIntIDList[idx] = val.partition('ifDescr')[2]
@@ -213,6 +223,7 @@ def getCdpSrcInterfaces(router):
 	for idx, val in enumerate(localIntIDList):
 		intDict[localIntIDList[idx]] = localIntList[idx]
 	interfaceOutput = string.split(interfaceOutput, '\n')
+	#Partition the remote interfaces until the ID for the local interface is obtained
 	for idx, val in enumerate(interfaceOutput):
 		interfaceOutput[idx] = val.partition('9.9.23.1.2.1.1.7')[2]
 	for idx, val in enumerate(interfaceOutput):
@@ -247,7 +258,6 @@ def updateRouters(updateRouter, topology):
 					if ipaddr.IPv4Network(ipAddress) in specVal:
 						if deviceAdded == False:
 							#Create the device
-							print 'Adding ' + routerHosts[idx]
 							newRouter = router([])
 							newRouter.addHostname(routerHosts[idx])
 							newRouter.addIpAddress(routerIPs[idx])
@@ -271,37 +281,42 @@ def updateRouters(updateRouter, topology):
 												newCDP.addSrcPort(srcInterfaceList[newIDX])
 												newCDP.addDstPort(dstInterfaceList[newIDX])
 												newRouter.addCdpEntry(newCDP)
+												deviceAdded = True
+								print 'Adding ' + routerHosts[idx]
 								topology.addRouter(newRouter)
 								updateRouters(newRouter, topology)
 							except:
-								print 'Discovery failed to communicate with ' + routerHosts[idx] + ' this will be excluded from the topology.'
+								#Exception thrown - device is unresponsive to SNMP
 								unresponsiveDevices.append(routerHosts[idx])
 			else:
 				#All networks are to be included. Add the device
-				print 'Adding ' + routerHosts[idx]
-				newRouter = router([])
-				newRouter.addHostname(routerHosts[idx])
-				newRouter.addIpAddress(routerIPs[idx])
-				deviceCapability = getCapabilities(newRouter)
-				newRouter.addCapability(deviceCapability)
-				hostnameList = getCDPHostnames(newRouter)
-				IPAddressList = getCDPIPs(newRouter)
-				dstInterfaceList = getCDPDstInterfaces(newRouter)
-				srcInterfaceList = getCdpSrcInterfaces(newRouter)
-				for newIDX, newVal in enumerate(hostnameList):
-					#Add each interface to the device
-					newCDP = cdpEntry([])
-					newCDP.addHostname(hostnameList[newIDX])
-					newCDP.addIpAddress(IPAddressList[newIDX])
-					newCDP.addSrcPort(srcInterfaceList[newIDX])
-					newCDP.addDstPort(dstInterfaceList[newIDX])
-					newRouter.addCdpEntry(newCDP)
-				#add the new device to the topology
-				topology.addRouter(newRouter)
-				updateRouters(newRouter, topology)
+				try:
+					newRouter = router([])
+					newRouter.addHostname(routerHosts[idx])
+					newRouter.addIpAddress(routerIPs[idx])
+					deviceCapability = getCapabilities(newRouter)
+					newRouter.addCapability(deviceCapability)
+					hostnameList = getCDPHostnames(newRouter)
+					IPAddressList = getCDPIPs(newRouter)
+					dstInterfaceList = getCDPDstInterfaces(newRouter)
+					srcInterfaceList = getCdpSrcInterfaces(newRouter)
+					for newIDX, newVal in enumerate(hostnameList):
+						#Add each interface to the device
+						newCDP = cdpEntry([])
+						newCDP.addHostname(hostnameList[newIDX])
+						newCDP.addIpAddress(IPAddressList[newIDX])
+						newCDP.addSrcPort(srcInterfaceList[newIDX])
+						newCDP.addDstPort(dstInterfaceList[newIDX])
+						newRouter.addCdpEntry(newCDP)
+					#add the new device to the topology
+					print 'Adding ' + routerHosts[idx]
+					topology.addRouter(newRouter)
+					updateRouters(newRouter, topology)
+				except:
+					#Exception thrown - device is unresponsive to SNMP
+					unresponsiveDevices.append(routerHosts[idx])
 
 def formatInterfaces(topology):
-	#Account for 0/0/0 etc.
 	intChanges = intChangeList([])
 	for idx, val in enumerate(topology.routerList):
 		gigabitInts = []
@@ -474,10 +489,17 @@ def getUserInput():
 				print 'Invalid IP Network'
 
 def removeUnresponsive(topology):
-	set(unresponsiveDevices)
-	for idx, val in enumerate(unresponsiveDevices):
+	#Function removes links with reference to unresponsive devices from the topology
+	#Uses set() to create a list of unique entries
+	deviceDelete = set(unresponsiveDevices)
+	#For every unresponsive device:
+	for idx, val in enumerate(deviceDelere):
+		print 'Could not communicate with ' + val + ' it will be removed from the topology'
+		#For every device in the topology
 		for deviceIDX, deviceVal in enumerate(topology.routerList):
+			#For all of the above devices CDP entries (links)
 			for cdpIDX, cdpVal in enumerate(deviceVal.cdp_entries):
+				#If the link connects to the unresponsve device, remove it from the topology
 				if cdpVal.hostname == val:
 					print 'Removing ' + cdpVal.srcPort + ' from ' + deviceVal.hostname
 					deviceVal.removeCDPEntry(cdpVal.srcPort)
@@ -530,8 +552,8 @@ def main():
 			baseRouter.addCdpEntry(newCDP)
 	topology.addRouter(baseRouter)
 	updateRouters(baseRouter, topology)
-	print 'Router additions complete'
-	removeUnresponsive(topology)
+	if len(unresponsiveDevices) > 0:
+		removeUnresponsive(topology)
 	pickle.dump(topology, open("topologyData.p", "wb"))
 	formatInterfaces(topology)
 	findSwitches(topology)
