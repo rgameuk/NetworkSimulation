@@ -8,6 +8,10 @@ import pysftp
 import operator
 import collections
 import copy
+import time
+import sys
+import argparse
+import ipaddr 
 
 class routerList(object):
 	def __init__(self, routerList):
@@ -38,12 +42,6 @@ class router(object):
 	def removeCDPEntry(self, interfaceName):
 		#Updates cdp_entries to include only those that DO NOT match interfaceName
 		self.cdp_entries = [cdpEntry for cdpEntry in self.cdp_entries if cdpEntry.srcPort != interfaceName]
-
-		#for cdpIDX, cdpVal in enumerate(self.cdp_entries):
-		#	print self.cdp_entries[cdpIDX].hostname + ' on ' + self.cdp_entries[cdpIDX].srcPort
-		#	if cdpVal.srcPort == interfaceName:
-		#		#print 'Deleting: ' + self.cdp_entries[cdpIDX].hostname + ' on ' + self.cdp_entries[cdpIDX].srcPort
-		#		self.cdp_entries[cdpIDX] = cdpEntry([])
 
 class cdpEntry(object):
 	def __init__(self, hostname):
@@ -108,19 +106,50 @@ class switchUpdate(object):
 		self.switchport = ''
 
 def getLocalCDPInfo(baseRouter):
-	cdpdiscovery = subprocess.check_output(["cdpr", "-d", "eth0"])
-	cdpList = string.split(cdpdiscovery,'\n')
-	cdpValues = [s for s in cdpList if re.search('value', s)]
-	for idx, val in enumerate(cdpValues):
-		cdpValues[idx] = val.replace(" ", "")
-	for idx, val in enumerate(cdpValues):
-		cdpValues[idx] = val.partition(':')[2]
-	baseRouter.addHostname(cdpValues[0])
-	baseRouter.addIpAddress(cdpValues[1])
-	deviceCapability = getCapabilities(baseRouter)
-	baseRouter.addCapability(deviceCapability)
-	return baseRouter
-
+	#Function listens on interface for a CDP packet and creates a router if successful. Script closes if no packet found
+	try: #Catches exception generated when CDPR returns null (CDP packet not seen)
+		cdpdiscovery = subprocess.check_output(["cdpr", "-d", "eth0", "-t", "61"])
+		#Starts subprocess for CDP, timeout is set to 61 as default CDP timer is 60
+		#CDP returns the information in lines, below code breaks in into a list and processes the information 
+		cdpList = string.split(cdpdiscovery,'\n')
+		cdpValues = [s for s in cdpList if re.search('value', s)]
+		for idx, val in enumerate(cdpValues):
+			cdpValues[idx] = val.replace(" ", "")
+		for idx, val in enumerate(cdpValues):
+			cdpValues[idx] = val.partition(':')[2]
+		#The below code creates a router object for the baserouter and returns it to main
+		if checkNetworks == True:
+			#Networks ranges have been specified for discovery
+			notInNetwork = True
+			ipAddress = str(cdpValues[1]) + '/32'
+			#Create string to hold device IP address
+			for idx, val in enumerate(specifiedNetworks):
+				#Check each network that has been specified
+				if ipaddr.IPv4Network(ipAddress) in val:
+					#Check the ip address of the device is inside the network
+					#If it is, create a device for it
+					notInNetwork = False
+					baseRouter.addHostname(cdpValues[0])
+					baseRouter.addIpAddress(cdpValues[1])
+					deviceCapability = getCapabilities(baseRouter)
+					baseRouter.addCapability(deviceCapability)
+					return baseRouter
+			if notInNetwork == True:
+				#If the device is not in the network, throw an error
+				print 'Local device is not in specied networks. Aborting Network Discovery'
+				sys.exit()
+		else:
+			#Networks have not been specified, create an object for the device
+			baseRouter.addHostname(cdpValues[0])
+			baseRouter.addIpAddress(cdpValues[1])
+			deviceCapability = getCapabilities(baseRouter)
+			baseRouter.addCapability(deviceCapability)
+			return baseRouter
+	except:
+		#Exception thrown, this will occur when no CDP packet is seen within the timeout of CDPR
+		print 'No CDP packet discovered. Aborting Network Discovery'
+		sys.exit()
+		
 def getCDPHostnames(router):
 	hostnameOutput=subprocess.check_output(["snmpwalk", "-v", "2c", "-c", "public", router.ipAddress, "1.3.6.1.4.1.9.9.23.1.2.1.1.6"])
 	hostnameOutput = string.split(hostnameOutput, '\n')
@@ -197,7 +226,7 @@ def getCdpSrcInterfaces(router):
 		interfaceOutput[idx] = intDict[val]
 	return interfaceOutput
 	
-def updateRouters(updateRouter):
+def updateRouters(updateRouter, topology):
 	routerHosts = getCDPHostnames(updateRouter)
 	routerIPs = getCDPIPs(updateRouter)
 	for idx, val in enumerate(routerHosts):
@@ -205,7 +234,6 @@ def updateRouters(updateRouter):
 		for routerIDX, routerVal in enumerate(topology.routerList):
 			if val == routerVal.hostname:
 				routerExists = True
-				print 'Router Exists'
 		if routerExists == False:
 			print 'Adding ' + routerHosts[idx]
 			newRouter = router([])
@@ -225,7 +253,7 @@ def updateRouters(updateRouter):
 				newCDP.addDstPort(dstInterfaceList[idx])
 				newRouter.addCdpEntry(newCDP)
 			topology.addRouter(newRouter)
-			updateRouters(newRouter)
+			updateRouters(newRouter, topology)
 
 def formatInterfaces(topology):
 	#Account for 0/0/0 etc.
@@ -304,8 +332,7 @@ def findSwitches(topology):
 					dupes.append(cdpVal.srcPort)
 			set(dupes)
 
-			if len(dupes) > 0:
-				
+			if len(dupes) > 0:	
 				print routerVal.hostname
 				print dupes
 				for dupeIDX, dupeInterface in enumerate(dupes):
@@ -347,7 +374,6 @@ def findSwitches(topology):
 					updateSwitchLinks(topology, switchUpdates, switchHostname)
 
 def updateSwitchLinks(topology, switchUpdates, switchHostname):
-	print 'Called'
 	interfaceValue = 0
 	for value in switchUpdates:
 		for routerIDX, routerVal in enumerate(topology.routerList):
@@ -388,7 +414,36 @@ def createJSON(topology):
 		json.dump(vars(jsonTopology), outfile,indent=4)
 		#json.dump(jsonOutput, outfile,ensure_ascii=False)
 
-if __name__ == "__main__":
+def getUserInput():
+	networkInput = ''
+	subnetInput = ''
+	print 'Enter the network address at the first prompt, followed by the subnet at the second. Type "end" to finish'
+	while networkInput != 'end':
+		print 'Enter the network address:'
+		networkInput = raw_input()
+		if networkInput != 'end':
+			print 'Enter the subnet mask in CIDR notation (Example: /24)'
+			subnetInput = raw_input()
+			try:
+				newIP = ipaddr.IPv4Network(networkInput+subnetInput, strict=True)
+				specifiedNetworks.append(newIP)
+			except:
+				print 'Invalid IP Network'
+
+def main():
+	global checkNetworks
+	global specifiedNetworks
+	checkNetworks = False
+	parser = argparse.ArgumentParser()
+	parser.add_argument("--specify", help="Specify the networks to be discovered",
+                    action="store_true")
+	args = parser.parse_args()
+	if args.specify:
+		specifiedNetworks = []
+		checkNetworks = True
+		getUserInput()
+		print specifiedNetworks
+
 	topology = routerList([])
 	baseRouter = router([])
 	getLocalCDPInfo(baseRouter)	
@@ -405,7 +460,7 @@ if __name__ == "__main__":
 		newCDP.addDstPort(dstInterfaceList[idx])
 		baseRouter.addCdpEntry(newCDP)
 	topology.addRouter(baseRouter)
-	updateRouters(baseRouter)
+	updateRouters(baseRouter, topology)
 	pickle.dump(topology, open("topologyData.p", "wb"))
 	formatInterfaces(topology)
 	findSwitches(topology)
@@ -426,3 +481,6 @@ if __name__ == "__main__":
 	with pysftp.Connection('178.62.24.178', username='sftp', private_key='/home/rob/.ssh/id_rsa') as sftp:
 		with sftp.cd('json-files'):
 			sftp.put('topology.json')
+
+if __name__ == "__main__":
+	main()
