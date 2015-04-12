@@ -229,43 +229,55 @@ def getCdpSrcInterfaces(router):
 def updateRouters(updateRouter, topology):
 	routerHosts = getCDPHostnames(updateRouter)
 	routerIPs = getCDPIPs(updateRouter)
+	#For each connected device to the update Router
 	for idx, val in enumerate(routerHosts):
 		routerExists = False
 		for routerIDX, routerVal in enumerate(topology.routerList):
+			#Check whether the device already exists
 			if val == routerVal.hostname:
 				routerExists = True
 		if routerExists == False:
+			#If the device is not already known
 			if checkNetworks == True:
+				#If there is a specified network set
 				ipAddress = routerIPs[idx] + '/32'
 				deviceAdded = False
+				#Check if device is within the specified subnets
 				for specIDX, specVal in enumerate(specifiedNetworks):
 					if ipaddr.IPv4Network(ipAddress) in specVal:
 						if deviceAdded == False:
+							#Create the device
 							print 'Adding ' + routerHosts[idx]
 							newRouter = router([])
 							newRouter.addHostname(routerHosts[idx])
 							newRouter.addIpAddress(routerIPs[idx])
-							deviceCapability = getCapabilities(newRouter)
-							newRouter.addCapability(deviceCapability)
-							hostnameList = getCDPHostnames(newRouter)
-							IPAddressList = getCDPIPs(newRouter)
-							dstInterfaceList = getCDPDstInterfaces(newRouter)
-							srcInterfaceList = getCdpSrcInterfaces(newRouter)
-							for newIDX, newVal in enumerate(hostnameList):
-								newIPAddress = IPAddressList[newIDX] + '/32'
-								deviceAdded = False
-								for newSpecIDX, newSpecVal in enumerate(specifiedNetworks):
-									if ipaddr.IPv4Network(newIPAddress) in newSpecVal:
-										if deviceAdded == False:
-											newCDP = cdpEntry([])
-											newCDP.addHostname(hostnameList[newIDX])
-											newCDP.addIpAddress(IPAddressList[newIDX])
-											newCDP.addSrcPort(srcInterfaceList[newIDX])
-											newCDP.addDstPort(dstInterfaceList[newIDX])
-											newRouter.addCdpEntry(newCDP)
-							topology.addRouter(newRouter)
-							updateRouters(newRouter, topology)
+							try:
+								deviceCapability = getCapabilities(newRouter)
+								newRouter.addCapability(deviceCapability)
+								hostnameList = getCDPHostnames(newRouter)
+								IPAddressList = getCDPIPs(newRouter)
+								dstInterfaceList = getCDPDstInterfaces(newRouter)
+								srcInterfaceList = getCdpSrcInterfaces(newRouter)
+								for newIDX, newVal in enumerate(hostnameList):
+									#Checks that the connected interfaces to the device fall within the defined subnets, if they do not, ignore them
+									newIPAddress = IPAddressList[newIDX] + '/32'
+									deviceAdded = False
+									for newSpecIDX, newSpecVal in enumerate(specifiedNetworks):
+										if ipaddr.IPv4Network(newIPAddress) in newSpecVal:
+											if deviceAdded == False:
+												newCDP = cdpEntry([])
+												newCDP.addHostname(hostnameList[newIDX])
+												newCDP.addIpAddress(IPAddressList[newIDX])
+												newCDP.addSrcPort(srcInterfaceList[newIDX])
+												newCDP.addDstPort(dstInterfaceList[newIDX])
+												newRouter.addCdpEntry(newCDP)
+								topology.addRouter(newRouter)
+								updateRouters(newRouter, topology)
+							except:
+								print 'Discovery failed to communicate with ' + routerHosts[idx] + ' this will be excluded from the topology.'
+								unresponsiveDevices.append(routerHosts[idx])
 			else:
+				#All networks are to be included. Add the device
 				print 'Adding ' + routerHosts[idx]
 				newRouter = router([])
 				newRouter.addHostname(routerHosts[idx])
@@ -277,12 +289,14 @@ def updateRouters(updateRouter, topology):
 				dstInterfaceList = getCDPDstInterfaces(newRouter)
 				srcInterfaceList = getCdpSrcInterfaces(newRouter)
 				for newIDX, newVal in enumerate(hostnameList):
+					#Add each interface to the device
 					newCDP = cdpEntry([])
 					newCDP.addHostname(hostnameList[newIDX])
 					newCDP.addIpAddress(IPAddressList[newIDX])
 					newCDP.addSrcPort(srcInterfaceList[newIDX])
 					newCDP.addDstPort(dstInterfaceList[newIDX])
 					newRouter.addCdpEntry(newCDP)
+				#add the new device to the topology
 				topology.addRouter(newRouter)
 				updateRouters(newRouter, topology)
 
@@ -459,9 +473,21 @@ def getUserInput():
 			except:
 				print 'Invalid IP Network'
 
+def removeUnresponsive(topology):
+	set(unresponsiveDevices)
+	for idx, val in enumerate(unresponsiveDevices):
+		for deviceIDX, deviceVal in enumerate(topology.routerList):
+			for cdpIDX, cdpVal in enumerate(deviceVal.cdp_entries):
+				if cdpVal.hostname == val:
+					print 'Removing ' + cdpVal.srcPort + ' from ' + deviceVal.hostname
+					deviceVal.removeCDPEntry(cdpVal.srcPort)
+
+
 def main():
 	global checkNetworks
 	global specifiedNetworks
+	global unresponsiveDevices
+	unresponsiveDevices = []
 	checkNetworks = False
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--specify", help="Specify the networks to be discovered",
@@ -504,6 +530,8 @@ def main():
 			baseRouter.addCdpEntry(newCDP)
 	topology.addRouter(baseRouter)
 	updateRouters(baseRouter, topology)
+	print 'Router additions complete'
+	removeUnresponsive(topology)
 	pickle.dump(topology, open("topologyData.p", "wb"))
 	formatInterfaces(topology)
 	findSwitches(topology)
