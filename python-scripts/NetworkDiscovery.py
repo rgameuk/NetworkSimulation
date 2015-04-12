@@ -235,25 +235,56 @@ def updateRouters(updateRouter, topology):
 			if val == routerVal.hostname:
 				routerExists = True
 		if routerExists == False:
-			print 'Adding ' + routerHosts[idx]
-			newRouter = router([])
-			newRouter.addHostname(routerHosts[idx])
-			newRouter.addIpAddress(routerIPs[idx])
-			deviceCapability = getCapabilities(newRouter)
-			newRouter.addCapability(deviceCapability)
-			hostnameList = getCDPHostnames(newRouter)
-			IPAddressList = getCDPIPs(newRouter)
-			dstInterfaceList = getCDPDstInterfaces(newRouter)
-			srcInterfaceList = getCdpSrcInterfaces(newRouter)
-			for idx, val in enumerate(hostnameList):
-				newCDP = cdpEntry([])
-				newCDP.addHostname(hostnameList[idx])
-				newCDP.addIpAddress(IPAddressList[idx])
-				newCDP.addSrcPort(srcInterfaceList[idx])
-				newCDP.addDstPort(dstInterfaceList[idx])
-				newRouter.addCdpEntry(newCDP)
-			topology.addRouter(newRouter)
-			updateRouters(newRouter, topology)
+			if checkNetworks == True:
+				ipAddress = routerIPs[idx] + '/32'
+				deviceAdded = False
+				for specIDX, specVal in enumerate(specifiedNetworks):
+					if ipaddr.IPv4Network(ipAddress) in specVal:
+						if deviceAdded == False:
+							print 'Adding ' + routerHosts[idx]
+							newRouter = router([])
+							newRouter.addHostname(routerHosts[idx])
+							newRouter.addIpAddress(routerIPs[idx])
+							deviceCapability = getCapabilities(newRouter)
+							newRouter.addCapability(deviceCapability)
+							hostnameList = getCDPHostnames(newRouter)
+							IPAddressList = getCDPIPs(newRouter)
+							dstInterfaceList = getCDPDstInterfaces(newRouter)
+							srcInterfaceList = getCdpSrcInterfaces(newRouter)
+							for newIDX, newVal in enumerate(hostnameList):
+								newIPAddress = IPAddressList[newIDX] + '/32'
+								deviceAdded = False
+								for newSpecIDX, newSpecVal in enumerate(specifiedNetworks):
+									if ipaddr.IPv4Network(newIPAddress) in newSpecVal:
+										if deviceAdded == False:
+											newCDP = cdpEntry([])
+											newCDP.addHostname(hostnameList[newIDX])
+											newCDP.addIpAddress(IPAddressList[newIDX])
+											newCDP.addSrcPort(srcInterfaceList[newIDX])
+											newCDP.addDstPort(dstInterfaceList[newIDX])
+											newRouter.addCdpEntry(newCDP)
+							topology.addRouter(newRouter)
+							updateRouters(newRouter, topology)
+			else:
+				print 'Adding ' + routerHosts[idx]
+				newRouter = router([])
+				newRouter.addHostname(routerHosts[idx])
+				newRouter.addIpAddress(routerIPs[idx])
+				deviceCapability = getCapabilities(newRouter)
+				newRouter.addCapability(deviceCapability)
+				hostnameList = getCDPHostnames(newRouter)
+				IPAddressList = getCDPIPs(newRouter)
+				dstInterfaceList = getCDPDstInterfaces(newRouter)
+				srcInterfaceList = getCdpSrcInterfaces(newRouter)
+				for newIDX, newVal in enumerate(hostnameList):
+					newCDP = cdpEntry([])
+					newCDP.addHostname(hostnameList[newIDX])
+					newCDP.addIpAddress(IPAddressList[newIDX])
+					newCDP.addSrcPort(srcInterfaceList[newIDX])
+					newCDP.addDstPort(dstInterfaceList[newIDX])
+					newRouter.addCdpEntry(newCDP)
+				topology.addRouter(newRouter)
+				updateRouters(newRouter, topology)
 
 def formatInterfaces(topology):
 	#Account for 0/0/0 etc.
@@ -281,8 +312,6 @@ def formatInterfaces(topology):
 			interfaceValues = interfaceValues + fastEthernetInts
 		if len(serialInts)>0:
 			interfaceValues = interfaceValues + serialInts
-		#TODO: Prioritise Gigabit interfaces over Fa and Se
-		# Idea: Three lists for each int type which is the combined?
 		localChanges = {}
 		for intIDX, intVAL in enumerate(interfaceValues):
 			if interfaceValues[intIDX] in localChanges:
@@ -452,13 +481,27 @@ def main():
 	dstInterfaceList = getCDPDstInterfaces(baseRouter)
 	srcInterfaceList = getCdpSrcInterfaces(baseRouter)
 
-	for idx, val in enumerate(hostnameList):
-		newCDP = cdpEntry([])
-		newCDP.addHostname(hostnameList[idx])
-		newCDP.addIpAddress(IPAddressList[idx])
-		newCDP.addSrcPort(srcInterfaceList[idx])
-		newCDP.addDstPort(dstInterfaceList[idx])
-		baseRouter.addCdpEntry(newCDP)
+	for idx, val in enumerate(IPAddressList):
+		if checkNetworks == True:
+			ipAddress = val + '/32'
+			deviceAdded = False
+			for specIDX, specVal in enumerate(specifiedNetworks):
+				if ipaddr.IPv4Network(ipAddress) in specVal:
+					if deviceAdded == False:
+						newCDP = cdpEntry([])
+						newCDP.addHostname(hostnameList[idx])
+						newCDP.addIpAddress(IPAddressList[idx])
+						newCDP.addSrcPort(srcInterfaceList[idx])
+						newCDP.addDstPort(dstInterfaceList[idx])
+						baseRouter.addCdpEntry(newCDP)
+						deviceAdded = True
+		else:
+			newCDP = cdpEntry([])
+			newCDP.addHostname(hostnameList[idx])
+			newCDP.addIpAddress(IPAddressList[idx])
+			newCDP.addSrcPort(srcInterfaceList[idx])
+			newCDP.addDstPort(dstInterfaceList[idx])
+			baseRouter.addCdpEntry(newCDP)
 	topology.addRouter(baseRouter)
 	updateRouters(baseRouter, topology)
 	pickle.dump(topology, open("topologyData.p", "wb"))
