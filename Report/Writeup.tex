@@ -13,6 +13,7 @@
 \usepackage{color}
 \usepackage{listings}
 \usepackage{setspace}
+\usepackage[toc,page]{appendix}
 
 \definecolor{Code}{rgb}{0,0,0}
 \definecolor{Decorators}{rgb}{0.5,0.5,0.5}
@@ -837,90 +838,9 @@ The SNMP interaction consists of one function per SNMP call, in this function th
 	return hostnameOutput
 \end{python}
 
-This information is added to the baseRouter object, at this point in the code only the base router and its links are known. At this point a recursive function updateRouters is called. This recursive funtion discovers all remaining devices in the topology. The control for this function is based on whether routers that are currently seen already exist in the topology object, if already known, the routers are ignored. Alternatively, if the routers are unknown an object is created for them and the function is recursively called with the new routers. The function that handles this behaviour is below:
+This information is added to the baseRouter object, at this point in the code only the base router and its links are known. At this point a recursive function updateRouters is called. This recursive funtion discovers all remaining devices in the topology. The control for this function is based on whether routers that are currently seen already exist in the topology object, if already known, the routers are ignored. Alternatively, if the routers are unknown an object is created for them and the function is recursively called with the new routers. The function that handles this behaviour is documented in Appendix A, Function updateRouters()
 
-\begin{python}
-def updateRouters(updateRouter, topology):
-	routerHosts = getCDPHostnames(updateRouter)
-	routerIPs = getCDPIPs(updateRouter)
-	#For each connected device to the update Router
-	for idx, val in enumerate(routerHosts):
-		routerExists = False
-		for routerIDX, routerVal in enumerate(topology.routerList):
-			#Check whether the device already exists
-			if val == routerVal.hostname:
-				routerExists = True
-		if routerExists == False:
-			#If the device is not already known
-			if checkNetworks == True:
-				#If there is a specified network set
-				ipAddress = routerIPs[idx] + '/32'
-				deviceAdded = False
-				#Check if device is within the specified subnets
-				for specIDX, specVal in enumerate(specifiedNetworks):
-					if ipaddr.IPv4Network(ipAddress) in specVal:
-						if deviceAdded == False:
-							#Create the device
-							newRouter = router([])
-							newRouter.addHostname(routerHosts[idx])
-							newRouter.addIpAddress(routerIPs[idx])
-							try:
-								deviceCapability = getCapabilities(newRouter)
-								newRouter.addCapability(deviceCapability)
-								hostnameList = getCDPHostnames(newRouter)
-								IPAddressList = getCDPIPs(newRouter)
-								dstInterfaceList = getCDPDstInterfaces(newRouter)
-								srcInterfaceList = getCdpSrcInterfaces(newRouter)
-								for newIDX, newVal in enumerate(hostnameList):
-									#Checks that the connected interfaces to the device fall within the defined subnets, if they do not, ignore them
-									newIPAddress = IPAddressList[newIDX] + '/32'
-									deviceAdded = False
-									for newSpecIDX, newSpecVal in enumerate(specifiedNetworks):
-										if ipaddr.IPv4Network(newIPAddress) in newSpecVal:
-											if deviceAdded == False:
-												newCDP = cdpEntry([])
-												newCDP.addHostname(hostnameList[newIDX])
-												newCDP.addIpAddress(IPAddressList[newIDX])
-												newCDP.addSrcPort(srcInterfaceList[newIDX])
-												newCDP.addDstPort(dstInterfaceList[newIDX])
-												newRouter.addCdpEntry(newCDP)
-												deviceAdded = True
-				print 'Adding ' + routerHosts[idx]
-				topology.addRouter(newRouter)
-				updateRouters(newRouter, topology)
-			except:
-				#Exception thrown - device is unresponsive to SNMP
-				unresponsiveDevices.append(routerHosts[idx])
-	else:
-		#All networks are to be included. Add the device
-		try:
-			newRouter = router([])
-			newRouter.addHostname(routerHosts[idx])
-			newRouter.addIpAddress(routerIPs[idx])
-			deviceCapability = getCapabilities(newRouter)
-			newRouter.addCapability(deviceCapability)
-			hostnameList = getCDPHostnames(newRouter)
-			IPAddressList = getCDPIPs(newRouter)
-			dstInterfaceList = getCDPDstInterfaces(newRouter)
-			srcInterfaceList = getCdpSrcInterfaces(newRouter)
-			for newIDX, newVal in enumerate(hostnameList):
-				#Add each interface to the device
-				newCDP = cdpEntry([])
-				newCDP.addHostname(hostnameList[newIDX])
-				newCDP.addIpAddress(IPAddressList[newIDX])
-				newCDP.addSrcPort(srcInterfaceList[newIDX])
-				newCDP.addDstPort(dstInterfaceList[newIDX])
-				newRouter.addCdpEntry(newCDP)
-			#add the new device to the topology
-			print 'Adding ' + routerHosts[idx]
-			topology.addRouter(newRouter)
-			updateRouters(newRouter, topology)
-		except:
-			#Exception thrown - device is unresponsive to SNMP
-			unresponsiveDevices.append(routerHosts[idx])
-\end{python}
-
-The above function has two distinct paths, it can either add all devices it discovers to the topology. In this case the code following line 52 is executed, a device is added to the topology if it is unknown. An alternative path is the on line 13, the checkNetworks flag is set to true, all devices are checked against the list of required networks and if any do not match they are ignored. This method is effective for removing unwanted devices from the topology, however the connection from other devices to the device in question will still remain. Any links that do not have a defined destination will not create a valid JSON or VIRL file and the emulation engine will fail. In order to avoid this situation, when an unwanted router is encountered it is logged to a global variable, unresponsiveDevices (line 48) after device discovery is complete a function removeUnresponsive deletes any links with reference to these devices from the topology. This function is shown below:
+The function has two distinct paths, it can either add all devices it discovers to the topology. In this case the code following line 52 is executed, a device is added to the topology if it is unknown. An alternative path is the on line 13, the checkNetworks flag is set to true, all devices are checked against the list of required networks and if any do not match they are ignored. This method is effective for removing unwanted devices from the topology, however the connection from other devices to the device in question will still remain. Any links that do not have a defined destination will not create a valid JSON or VIRL file and the emulation engine will fail. In order to avoid this situation, when an unwanted router is encountered it is logged to a global variable, unresponsiveDevices (line 48) after device discovery is complete a function removeUnresponsive() deletes any links with reference to these devices from the topology. This function is shown below:
 
 \begin{python}
 def removeUnresponsive(topology):
@@ -939,6 +859,39 @@ def removeUnresponsive(topology):
 					print 'Removing ' + cdpVal.srcPort + ' from ' + deviceVal.hostname
 					deviceVal.removeCDPEntry(cdpVal.srcPort)
 \end{python}
+
+Once the unresponsive devices are removed from the topology the first stage of the emulation layout is complete, however in it's current form the topology will be rejected by VIRL. This is because VIRL only supports GigabitEthernet interfaces in an emulation, the topology needs to be reformatted to remove any FastEthernet or Serial connections and replace them. This is handled by formatInterfaces(). The function looks at each device in the topology, inspecting each interface on the device and mapping the interface to a GigabitEthernet connection on the emulation. It maintains a list (intChanges) of each host and the interfaces that were changed on the host, saving them to a file for use in the configFormatter section of the tool.
+
+When the function is nearing it's end it passes this list on to the replaceInterfaces() function. This function iterates intChanges, looking at every device in the topology and each CDP entry for that device. When the function meets the current device in intChanges it looks for any CDP entries that have a source interface of the interface to be changed, once it is found the interface name is replaced with it's emulated counterpart. At this stage in the discovery process there can be multiple CDP entries with the same source interface, this occurs when there is a switch in the network. When designing this function this caused issues as there can be an expectation that CDP entries map to interfaces in a one-to-one fashion, in the original version of this function a flag was set when a source interface was changed. However, this was naive as when this code was deployed to topologies that were not just point-to-point links the code would fail as pre-emulation interfaces would remain after the function ended.
+
+\begin{python}
+def replaceInterfaces(topology, intChanges):
+	#Function iterates through the changeList and makes changes to the interface on the device and the CDP Entry on any device
+	#connecting to the device in question
+	
+	#For each change entry
+	for i, changeEntry in enumerate(intChanges.changeList):
+		#Look at every device on the topology
+		for j, routerVal in enumerate(topology.routerList):
+			#Look at each device's CDP entries
+			for k, val in enumerate(routerVal.cdp_entries):
+				#If the device is the one to be changed and this is the port to be changed
+				if routerVal.hostname == intChanges.changeList[i].hostname and val.srcPort == intChanges.changeList[i].orignalPort:
+					#Update the port
+					topology.routerList[j].cdp_entries[k].srcPort = intChanges.changeList[i].newPort
+				#If the device is not the one to be changed but has a connection to the device in question
+				elif val.hostname == intChanges.changeList[i].hostname and val.dstPort == intChanges.changeList[i].orignalPort:
+					#Update the remote port in the CDP entry
+					topology.routerList[j].cdp_entries[k].dstPort = intChanges.changeList[i].newPort	
+\end{python}
+
+One important aspect of this function is ensuring that CDP entries of devices that connect to the device in intChanges are also updated, the second statement in the function allows for this and checks the CDP entry on every device, if the device has a CDP entry connecting to the current device to be updated the destination port is updated. Doing this ensures that all links in the emulation connect to the correct location.
+
+At this point in the Network Discovery process the physical layout of the topology is known, however there is additional information that can be extracted from the topology, one example is the identification of Layer-2 devices such as switches. One indication of such device is a router including two CDP entries on one interface, this shows that there are two local devices connected through one physical cable which is not possible without some layer-2 device in the middle. To accommodate switches the tool has a function findSwitches() which is documented in Appendix B. This function again iterates over all the devices in the topology, for each device it notes the occurrence of each local interface in the CDP entries. If any encountered interface already exists in the seen set it is noted as a duplicate and added to the dupes list.
+
+The function then inspects this dupes list (if any duplicates exist) for each duplicate a switch is created for the LAN segment connected to the interface. This switch is given a hostname and CDP entries are created both for the local interface and for the remote interfaces that are connected to the local link. This effectively splits the connection in half, inserting a switch into the link which connects to both routers. Once the switch is created, another function updateSwitchLinks() is called which will update the CDP entries on the local and destination interfaces.
+
+The function updateSwitchLinks() iterates through each update, looking at each host's CDP entries until the defined in the update is seen
 
 \section{VIRL File Creation}
 
@@ -1110,6 +1063,170 @@ ifconfig eth1 up 10.254.0.36 netmask 255.255.255.0
 
 \bibliographystyle{plainnat}
 \bibliography{bibliography}
+
+\begin{appendices}
+\chapter{Function updateRouters()}
+\begin{python}
+def updateRouters(updateRouter, topology):
+	routerHosts = getCDPHostnames(updateRouter)
+	routerIPs = getCDPIPs(updateRouter)
+	#For each connected device to the update Router
+	for idx, val in enumerate(routerHosts):
+		routerExists = False
+		for routerIDX, routerVal in enumerate(topology.routerList):
+			#Check whether the device already exists
+			if val == routerVal.hostname:
+				routerExists = True
+		if routerExists == False:
+			#If the device is not already known
+			if checkNetworks == True:
+				#If there is a specified network set
+				ipAddress = routerIPs[idx] + '/32'
+				deviceAdded = False
+				#Check if device is within the specified subnets
+				for specIDX, specVal in enumerate(specifiedNetworks):
+					if ipaddr.IPv4Network(ipAddress) in specVal:
+						if deviceAdded == False:
+							#Create the device
+							newRouter = router([])
+							newRouter.addHostname(routerHosts[idx])
+							newRouter.addIpAddress(routerIPs[idx])
+							try:
+								deviceCapability = getCapabilities(newRouter)
+								newRouter.addCapability(deviceCapability)
+								hostnameList = getCDPHostnames(newRouter)
+								IPAddressList = getCDPIPs(newRouter)
+								dstInterfaceList = getCDPDstInterfaces(newRouter)
+								srcInterfaceList = getCdpSrcInterfaces(newRouter)
+								for newIDX, newVal in enumerate(hostnameList):
+									#Checks that the connected interfaces to the device fall within the defined subnets, if they do not, ignore them
+									newIPAddress = IPAddressList[newIDX] + '/32'
+									deviceAdded = False
+									for newSpecIDX, newSpecVal in enumerate(specifiedNetworks):
+										if ipaddr.IPv4Network(newIPAddress) in newSpecVal:
+											if deviceAdded == False:
+												newCDP = cdpEntry([])
+												newCDP.addHostname(hostnameList[newIDX])
+												newCDP.addIpAddress(IPAddressList[newIDX])
+												newCDP.addSrcPort(srcInterfaceList[newIDX])
+												newCDP.addDstPort(dstInterfaceList[newIDX])
+												newRouter.addCdpEntry(newCDP)
+												deviceAdded = True
+								print 'Adding ' + routerHosts[idx]
+								topology.addRouter(newRouter)
+								updateRouters(newRouter, topology)
+							except:
+								#Exception thrown - device is unresponsive to SNMP
+								unresponsiveDevices.append(routerHosts[idx])
+			else:
+				#All networks are to be included. Add the device
+				try:
+					newRouter = router([])
+					newRouter.addHostname(routerHosts[idx])
+					newRouter.addIpAddress(routerIPs[idx])
+					deviceCapability = getCapabilities(newRouter)
+					newRouter.addCapability(deviceCapability)
+					hostnameList = getCDPHostnames(newRouter)
+					IPAddressList = getCDPIPs(newRouter)
+					dstInterfaceList = getCDPDstInterfaces(newRouter)
+					srcInterfaceList = getCdpSrcInterfaces(newRouter)
+					for newIDX, newVal in enumerate(hostnameList):
+						#Add each interface to the device
+						newCDP = cdpEntry([])
+						newCDP.addHostname(hostnameList[newIDX])
+						newCDP.addIpAddress(IPAddressList[newIDX])
+						newCDP.addSrcPort(srcInterfaceList[newIDX])
+						newCDP.addDstPort(dstInterfaceList[newIDX])
+						newRouter.addCdpEntry(newCDP)
+					#add the new device to the topology
+					print 'Adding ' + routerHosts[idx]
+					topology.addRouter(newRouter)
+					updateRouters(newRouter, topology)
+				except:
+					#Exception thrown - device is unresponsive to SNMP
+					unresponsiveDevices.append(routerHosts[idx])
+\end{python}
+
+\chapter{Function findSwitches()}
+
+\begin{python}
+def findSwitches(topology):
+	#Function iterates through all devices, looking for switches on the topology (Two local CDP entries on the same interface)
+	print 'Looking for switches'
+	switchList = []
+	switchID = 1
+	#For all devices
+	for routerIDX, routerVal in enumerate(topology.routerList):
+		#If device is a router
+		if routerVal.capabilities == 'Router':
+			#Create a set to hold local interfaces on the router
+			seen = set()
+			uniq = []
+			dupes = []
+			for cdpIDX, cdpVal in enumerate(routerVal.cdp_entries):
+				if cdpVal.srcPort not in seen:
+					#If we haven't encountered this interface before add it to seen
+					uniq.append(cdpVal.srcPort)
+					seen.add(cdpVal.srcPort)
+				else:
+					#We have seen it before, therefore it is a duplicate
+					dupes.append(cdpVal.srcPort)
+			#Remove any duplicates from dupes
+			set(dupes)
+			
+			#If there are duplicate interfaces on this device
+			if len(dupes) > 0:	
+				#Iterate over the duplicate interfaces
+				for dupeIDX, dupeInterface in enumerate(dupes):
+					#List to hold local updates for both the router and switch
+					switchUpdates = []	
+					#Create a device for the switch
+					newSwitch = router([])
+					#Hostname increments per device
+					switchHostname = 'SW' + str(switchID)
+					newSwitch.addHostname(switchHostname)
+					#Set it's capability
+					newSwitch.addCapability('switch')
+					#First local update holds the current device and switch updates
+					localUpdate = switchUpdate([])
+					localUpdate.addswitchHostname(switchHostname)
+					localUpdate.adddstHostname(routerVal.hostname)
+					localUpdate.addSwitchport(dupeInterface)
+					switchUpdates.append(localUpdate)
+					#Iterate over the CDP entries for the local device
+					for cdpIDX, cdpVal in enumerate(routerVal.cdp_entries):
+						#If the source port is  the current duplicate
+						if cdpVal.srcPort == dupeInterface:
+							#Create an update for the DESTINATION interface and device
+							endUpdate = switchUpdate([])
+							endUpdate.addswitchHostname(switchHostname)
+							endUpdate.adddstHostname(cdpVal.hostname)
+							endUpdate.addSwitchport(cdpVal.dstPort)
+							switchUpdates.append(copy.copy(endUpdate))
+							endUpdate.clear()
+					switchExists = False
+					#Checks whether the defined switch has already been added
+					for deviceIDX, deviceVal in enumerate(topology.routerList):
+						if deviceVal.hostname == switchHostname:
+							switchExists = True
+					#If the switch does not already exist
+					if switchExists == False:
+						#Add it to the topology
+						topology.addRouter(newSwitch)
+						switchList.append(newSwitch.hostname)
+						switchID+=1
+					#For every update defined, create a CDP entry for the switch
+					for updateIDX, updateVal in enumerate(switchUpdates):
+						switchCDP = cdpEntry([])
+						switchCDP.addHostname(updateVal.dstHostname)
+						switchCDP.addSrcPort(str(updateIDX))
+						switchCDP.addDstPort(updateVal.switchport)
+						#Append the CDP entries to the switch device
+						newSwitch.addCdpEntry(copy.copy(switchCDP))
+					#Function call to update the CDP information on the routers
+					updateSwitchLinks(topology, switchUpdates, switchHostname)
+\end{python}
+\end{appendices}
 
 \end{document}
 
