@@ -89,7 +89,7 @@ class routerChanges(object):
 		self.newPort = newPort
 
 def loadJSON(topology):
-	#Load the topology to file
+	#Function loads the json file into routers and links in order to create a topology object
 	with open('topology.json') as data_file:    
 		data = json.load(data_file)
 	#Get the information about nodes

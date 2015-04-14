@@ -1,6 +1,7 @@
 import pickle
 from ciscoconfparse import CiscoConfParse
 import shutil
+import argparse
 
 class intChangeList(object):
 	#List object to hold router interface changes
@@ -25,22 +26,34 @@ class routerChanges(object):
 		self.newPort = newPort
 
 if __name__ == "__main__":
-	scriptLocation = '/home/rob/NetworkSimulation/python-scripts/config-files'
+	configLocation = '/home/rob/NetworkSimulation/python-scripts/config-files'
 	interfaceChanges = intChangeList([])
 	interfaceChanges = pickle.load(open("interfaceChanges.p", "rb"))
 	routerList = pickle.load(open("routerDictionary.p", "rb"))
+	copyFiles = True
 
-	for key, value in routerList.iteritems():
-		shutil.copy('/var/lib/rancid/Discovered/configs/' + key.lower(), scriptLocation)
+	parser = argparse.ArgumentParser()
+	parser.add_argument("--noCopy", help="Do not copy configuration files from rancid",
+                    action="store_true")
+	args = parser.parse_args()
+	if args.noCopy:
+		copyFiles = False
+
+	if copyFiles == True:
+		for key, value in routerList.iteritems():
+			shutil.copy('/var/lib/rancid/Discovered/configs/' + key.lower(), configLocation)
 	
+	#try:
 	for key, value in routerList.iteritems(): 
 		with open('./config-files/' + key.lower(), 'r') as f:
 			config = f.read()
 			f.close()
-		config = config.partition('config-register 0x2102')[2]
+		oldConfig = config.partition('version')
+		configList = [oldConfig[i] for i in (1, 2)]
+		config = configList[0] + configList[1]
+		print config
 		with open('./config-files/' + key.lower() + '.short', 'w') as f:
 			f.write(config)
-		#print config
 
 		p = CiscoConfParse('./config-files/' + key.lower() + '.short')
 
@@ -91,3 +104,5 @@ if __name__ == "__main__":
 		p.insert_after('line vty 0 4', ' transport input telnet ssh', exactmatch=True, atomic=False)
 
 		p.save_as('./config-files/' + key.lower() + '.edited')
+	#except:
+	#	print key + ' is not a valid Cisco configuration file. Aborting configuration edits'

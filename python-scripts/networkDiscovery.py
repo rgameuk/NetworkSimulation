@@ -391,8 +391,6 @@ def findSwitches(topology):
 			set(dupes)
 
 			if len(dupes) > 0:	
-				print routerVal.hostname
-				print dupes
 				for dupeIDX, dupeInterface in enumerate(dupes):
 					switchUpdates = []	
 					newSwitch = router([])
@@ -455,6 +453,7 @@ def createJSON(topology):
 		nodeDict = {}
 		nodeDict['deviceType'] = val.capabilities
 		nodeDict['hostname'] = val.hostname
+		nodeDict['ipAddress'] = val.ipAddress
 		nodeDict['deviceNo'] = idx
 		for cdpIDX, cdpVal in enumerate(val.cdp_entries):
 			linksDict = {}
@@ -464,6 +463,7 @@ def createJSON(topology):
 			linksDict['dstRouter'] = cdpVal.hostname
 			linksDict['target'] = routerNumber[cdpVal.hostname]
 			linksDict['dstPort'] = cdpVal.dstPort
+			linksDict['dstIpAddress'] = cdpVal.ipAddress
 			linksDict['value'] = 1
 			jsonTopology.appendLink(linksDict)
 		jsonTopology.appendNode(nodeDict)
@@ -493,7 +493,7 @@ def removeUnresponsive(topology):
 	#Uses set() to create a list of unique entries
 	deviceDelete = set(unresponsiveDevices)
 	#For every unresponsive device:
-	for idx, val in enumerate(deviceDelere):
+	for idx, val in enumerate(deviceDelete):
 		print 'Could not communicate with ' + val + ' it will be removed from the topology'
 		#For every device in the topology
 		for deviceIDX, deviceVal in enumerate(topology.routerList):
