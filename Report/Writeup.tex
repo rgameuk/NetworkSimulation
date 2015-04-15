@@ -135,11 +135,9 @@ The technology relies on creating a sandbox within a physical host in which ``mu
 
 The benefits of server virtualisation come in both a technical and economic form. \citep{crosby2006virtualization} says ``the artifacts of current operating-system and system-software architecture result in most servers today running at under 10 percent utilization.'' from a technical perspective the implementation of a virtual server for multiple operating system instances versus a separate physical host each allows for much better utilisation of a single server and thus provides gains in capacity management for infrastructure. Economic benefits come from the amount of physical hardware required in a Data Centre, \citep{daniels2009server} says ``Data center floor space and rack space are prime real estate in computing environments. Cooling and electricity costs have risen in recent years'' and the adoption of virtual infrastructure can help keep costs down which allows enterprises to implement practises such as High Availability services.
 
-\begin{comment}
 At first glance the adoption of virtual infrastructure may seem to only bring benefits to enterprise, however \citep{kotsovinos2010virtualization} highlights some issues that arise with implementing virtualisation technology in large infrastructure. In this article the author talks about issues such as System Sprawl where `developers forget to return the VMs they do not use to the pool after the end of a project' creating problems in accountability and server ownership. In addition to this there is also a breakdown in the conventional responsibility of teams (silos) as issues can arise from multiple areas of infrastructure, the author says `cross-silo collaboration and communication are of paramount importance, requiring a true mentality shift in the way enterprise infrastructure organizations operate' which may be difficult to implement. A third issue that arises is the added complexity of changes as `Sharing the infrastructure comes with centralization and, therefore, with potential bottlenecks that are not as well understood' this creates additional complexity in Change Management as it is no longer as clear how a decision can affect the infrastructure as a whole.
-\end{comment}
 
-From the literature it is clear that virtualisation is a technology which is gaining momentum in large enterprise. The use of which allows engineers to make use of their infrastructure efficiently in both capacity and cost. It is clear that virtualisation is the correct method of implementing a network testing tool due to it's scalability and ease of implementation when compared to physical equipment. 
+From the literature it is clear that virtualisation is a technology which is gaining momentum in large enterprise. The use of which allows engineers to make use of their infrastructure efficiently in both capacity and cost. It is clear that virtualisation is the correct method of implementing a network testing tool due to its scalability and ease of implementation when compared to physical equipment. 
 
 \section{Virtualisation of Network Components}
 
@@ -194,7 +192,7 @@ The Open Source community has also played a role in this virtual networks field,
 
 GNS3 works well for Cisco router simulation, however it falls short when looking at Layer 2 simulation. Features such as Spanning Tree Protocol rely heavily on the fast processing speed of Application Specific Integrated Circuitry (ASICs) which are controllers within the switches that can quickly process frames. Cisco IOS combined with Dynamips cannot process frames fast enough in order to successfully implement these protocols. Therefore when testing redundancy scenarios such as outages which force a Layer 2 topology change cannot be tested. In addition to the issues outlined above there is no support for network discovery and the building of topologies for network testing.
 
-In addition to the shortfalls in some protocols, GNS3 lacks the scalability of some of it's competitors. On a conventional PC it can emulated 10-15 devices, however may use up to 90\% of the host's CPU if the IOS version is not calibrated for the host PC, because of this lack in scalability it may not be of any use to large enterprise.
+In addition to the shortfalls in some protocols, GNS3 lacks the scalability of some of its competitors. On a conventional PC it can emulated 10-15 devices, however may use up to 90\% of the host's CPU if the IOS version is not calibrated for the host PC, because of this lack in scalability it may not be of any use to large enterprise.
 
 From the review of current solutions there has not been a tool which can generate simulations of existing hardware. The only solutions at current are bare-bones building tool for network designs. The proposed tool is different in that its purpose is to be used in existing infrastructure to test disaster recovery or planned configuration changes.
 
@@ -212,7 +210,7 @@ VIRL is a relatively new offering from Cisco, and is their first software specif
 
 Connection to the VIRL Server is provided though an Eclipse-based front-end called VM Maestro. This interface provides an sandbox to build network topologies using the provided images of Cisco hardware within VIRL. For this project I will be concentrating on the use of Cisco's IOSv image, an image of the traditional IOS but adapted for use with a hypervisor. This allows the image to be run on a server without any dedicated ASICs. VIRL can then interconnect these devices provide connectivity and traffic. Using these connections the Routers can use routing protocols such as OSPF, EIGRP or BGP in order to create routing tables - this enables the user to simulate the Layer 3 functionality of their topology.
 
-VIRL has also been designed with flexibility in mind for it's users, one specific feature of note is the support of a tool called Autonetkit. This integration allows VIRL to create a fully functioning topology in a matter of seconds as configurations such as ip addressing and routing protocols can be passed off to Autonetkit which will auto-generate a working topology.
+VIRL has also been designed with flexibility in mind for its users, one specific feature of note is the support of a tool called Autonetkit. This integration allows VIRL to create a fully functioning topology in a matter of seconds as configurations such as ip addressing and routing protocols can be passed off to Autonetkit which will auto-generate a working topology.
 
 In addition to the features provided for functionality within VM Maestro, there are also a variety of configurations available to connect VIRL to the outside world. The first available connection is FLAT Networking - this provides a layer 2 interface which can bridge VIRL with physical hardware. This is particularly useful as it allows a user to integrate Layer 2 functionality with their simulation, an area in which VIRL is currently lacking. The second method of connectivity is through a SNAT connection on the VIRL simulation, this allows the simulation to assign external addresses to simulated objects such as Routers and Servers.
 
@@ -239,9 +237,7 @@ The tool will be of a linear format, current expectations will be that the tool 
 
 \section{Network Creation}
 
-An emulated network can be created using two distinct inputs, the first is a copy of the configuration files for all devices in the network which will determine how the components interact with one another. For example, a configuration file can provide the settings for a routing protocol such as OSPF, specifying information required to exchange routes with other devices and choosing the networks they wish to advertise to their peers. The second input is a form of detailing the physical layout of the network, representing the devices as nodes and their inter-device links as edges. Representing this data in a format that is easily readable by a program allows the proposed tool to create emulation with all the interfaces and connections of the physical network, an accurate reproduction of these components ensures that the emulation will behave in the same way as it's physical counterpart.
-
-\textit{Todo: Extracts of Config files and visio/json}
+An emulated network can be created using two distinct inputs, the first is a copy of the configuration files for all devices in the network which will determine how the components interact with one another. For example, a configuration file can provide the settings for a routing protocol such as OSPF, specifying information required to exchange routes with other devices and choosing the networks they wish to advertise to their peers. The second input is a form of detailing the physical layout of the network, representing the devices as nodes and their inter-device links as edges. Representing this data in a format that is easily readable by a program allows the proposed tool to create emulation with all the interfaces and connections of the physical network, an accurate reproduction of these components ensures that the emulation will behave in the same way as its physical counterpart. An example of a Cisco configuration file is in Appendix E.
 
 The proposed tool will provide two options for creating an emulated network. First allowing a user to create a version of a well-known network by allowing the input of already existing configuration backups and topology definitions from tools such as Rancid or Opsware. Alternatively, the user will be able to create an emulated version of their local network by using the tool to discover, map and backup their local devices before passing the information on to the simulation element.
 
@@ -257,19 +253,19 @@ For networks that do not have the management techniques defined above, the tool 
 
 In order to map the network topology dynamically, the proposed tool will use a combination of SNMP and CDP/LLDP in order to discover the devices in the local network. These technologies, when combined will allow for the tool to create a representation of the network in an edge-and-node format which can be parsed in the emulation software. CDP is a protocol created by Cisco which details a devices local neighbours giving information such as the neighbour's hostname, device type, IP Address, the connections local port and destination port. This information can be gathered from a device by using a standard called SNMP (Simple Network Management Protocol)
 
-Network configuration files can be extracted from running devices in multiple ways, the most common is to log on to a device and copy it's configuration to a network store such as a tftp (Trivial File Transfer Protocol) server where they are stored for later use. An alternative method is through further use of SNMP to poll a device for it's configuration which is returned over a terminal. The tool will use one of these methods to connect to and store a devices configuration. Once both the topology and the configuration of a network is obtained, it can then be passed to Emulation.
+Network configuration files can be extracted from running devices in multiple ways, the most common is to log on to a device and copy its configuration to a network store such as a tftp (Trivial File Transfer Protocol) server where they are stored for later use. An alternative method is through further use of SNMP to poll a device for its configuration which is returned over a terminal. The tool will use one of these methods to connect to and store a devices configuration. Once both the topology and the configuration of a network is obtained, it can then be passed to Emulation.
 
 \section{Network Representation}
 
-Although the VIRL system provides a topology view for running simulations, I am not intending on using this as part of the proposed tool. Instead, I will investigate methods of displaying a network using the information gathered in the Network Discovery section. I aim to investigate tools such as yED which allows the use of extensions to interact with network drawings. For example, when a topology has been drawn and displayed, it may carry additional attributes such as it's IP Address, using this information the graphing software can be extended to implement features such as a terminal emulator for direct access to a device, or an API for sending defined commands to an emulated network. In addition to the interaction with the emulation, I will also investigate methods of representing feedback from devices. This information can be displayed directly on the visual topology with labels such as the status of a network connection and it's current throughput. This idea can be extended and the use of colour on a network link can show the forwarding path for a destination IP address from it's source. Any changes made to the routing configuration during this time will be reflected by the colour of the links and any impact of the forwarding tables for a destination can be seen.
+Although the VIRL system provides a topology view for running simulations, I am not intending on using this as part of the proposed tool. Instead, I will investigate methods of displaying a network using the information gathered in the Network Discovery section. I aim to investigate tools such as yED which allows the use of extensions to interact with network drawings. For example, when a topology has been drawn and displayed, it may carry additional attributes such as its IP Address, using this information the graphing software can be extended to implement features such as a terminal emulator for direct access to a device, or an API for sending defined commands to an emulated network. In addition to the interaction with the emulation, I will also investigate methods of representing feedback from devices. This information can be displayed directly on the visual topology with labels such as the status of a network connection and its current throughput. This idea can be extended and the use of colour on a network link can show the forwarding path for a destination IP address from its source. Any changes made to the routing configuration during this time will be reflected by the colour of the links and any impact of the forwarding tables for a destination can be seen.
 
-In addition to the feedback required from a visual representation of a network, there also needs to be a level of interactivity with the network view. A topology can be viewed as it's physical layout but it may have other configurations underneath this layer such as Autonomous Systems, Routing Areas or Redundancy Pairs. This information should be viewable by changing a filter on the network representation as it gives a more granular view on how the network components interact with one another. Adding these extra filters will enable a Network Engineer to view the impact of planned changes on additional aspects of the network which may not have been considered previously.
+In addition to the feedback required from a visual representation of a network, there also needs to be a level of interactivity with the network view. A topology can be viewed as its physical layout but it may have other configurations underneath this layer such as Autonomous Systems, Routing Areas or Redundancy Pairs. This information should be viewable by changing a filter on the network representation as it gives a more granular view on how the network components interact with one another. Adding these extra filters will enable a Network Engineer to view the impact of planned changes on additional aspects of the network which may not have been considered previously.
 
 \section{Network Emulation}
 
-The proposed tool will use Cisco's Virtual Internet Routing Lab (VIRL) as it's platform for simulation, this was chosen as it provides a full Cisco IOSv image for network components which can scale more efficiently that other simulation platforms. In the proposed tool VIRL will be used as a back-end technology and the proposed tool will not make use of the Eclipse-based VM Maestro interface. The User can interact with devices by using SSH to connect to a jumphost which will provide access to the components using the management network which VIRL creates. 
+The proposed tool will use Cisco's Virtual Internet Routing Lab (VIRL) as its platform for simulation, this was chosen as it provides a full Cisco IOSv image for network components which can scale more efficiently that other simulation platforms. In the proposed tool VIRL will be used as a back-end technology and the proposed tool will not make use of the Eclipse-based VM Maestro interface. The User can interact with devices by using SSH to connect to a jumphost which will provide access to the components using the management network which VIRL creates. 
 
-In order to utilise VIRL to its fullest potential the proposed tool will connect to VIRL using it's defined REST API. From initial research it is understood that a simulation can be created by creating a request to the VIRL server and including a defined .virl file. Upon receiving this file the VIRL host will create a simulation based on the on the topology defined in the file. Information about a simulation can also be obtained by making a separate request to the server for a list of running simulations. The proposed tool will make use of both of these features and allow the server to create an emulation, gather information about the emulated network and interact with the network.
+In order to utilise VIRL to its fullest potential the proposed tool will connect to VIRL using its defined REST API. From initial research it is understood that a simulation can be created by creating a request to the VIRL server and including a defined .virl file. Upon receiving this file the VIRL host will create a simulation based on the on the topology defined in the file. Information about a simulation can also be obtained by making a separate request to the server for a list of running simulations. The proposed tool will make use of both of these features and allow the server to create an emulation, gather information about the emulated network and interact with the network.
 
 \section{Interaction}
 
@@ -596,7 +592,7 @@ One requirement of the proposed tool is the ability to display a network topolog
 
 A second requirement of the proposed tool is the ability to interact with protocols such as CDP and SNMP. From initial research this level of interaction with packet-level networking is considerably easier and more flexible on a Unix-based operating system as existing tools can be run in a standard shell to interact with CDP. In addition to this, there are additional python libraries which can create and/or intercept packets which require a Unix operating system to run.
 
-Due to the two requirements outlined above, it is proposed that a Linux desktop or server with display server should be used for this work. In particular, Ubuntu will be used for it's user-friendliness in comparison to other distributions.
+Due to the two requirements outlined above, it is proposed that a Linux desktop or server with display server should be used for this work. In particular, Ubuntu will be used for its user-friendliness in comparison to other distributions.
 
 \subsection{Networking Equipment}
 
@@ -604,15 +600,15 @@ The proposed tool is intended to be deployed in a real-world environment, howeve
 
 \subsection{Python}
 
-In addition to physical equipment, the tool will also use Python as it's primary language. This has been selected due to it's flexibility and existing position in the networking development world. Due to this foothold Python has an extensive set of libraries which facilitate easier access and processing of network information.
+In addition to physical equipment, the tool will also use Python as its primary language. This has been selected due to its flexibility and existing position in the networking development world. Due to this foothold Python has an extensive set of libraries which facilitate easier access and processing of network information.
 
 From initial research, Python can be used to create REST network connections which allow it to interface directly with VIRL to create, edit and destroy existing simulations. Selecting Python will enable the tool to seamlessly discover networks, collate network information, create a simulation and interact with a simulation.
 
 \subsection{CDP - Cisco Discovery Protocol}
 
-A second software that has been identified is CDP, a proprietary protocol created by Cisco which facilitates mapping of a network through local neighbour advertisements. This protocol is enabled on all Cisco devices by default, sending an advertisement to all local neighbours every 60 seconds. In this advertisement the device specifies it's hostname, whether the device is a router or a switch, the model number of the device and the interface on it's local side on which it is sending the advertisement. 
+A second software that has been identified is CDP, a proprietary protocol created by Cisco which facilitates mapping of a network through local neighbour advertisements. This protocol is enabled on all Cisco devices by default, sending an advertisement to all local neighbours every 60 seconds. In this advertisement the device specifies its hostname, whether the device is a router or a switch, the model number of the device and the interface on its local side on which it is sending the advertisement. 
 
-From an advertisement the receiving device can piece together all the received information in order to build a picture of it's local network. An example of a CDP table for a device is shown below. From this table it can be seen that there are two local routers (R2 and R3) on the local interface FastEthernet0/0. In addition to this information, it can also be seen that R2 and R3 can see R1 on their FastEthernet0/0 interfaces, with further analysis, because R1 can see R2 and R3 on the same local interface it can be inferred that there is a switch connecting all three devices.
+From an advertisement the receiving device can piece together all the received information in order to build a picture of its local network. An example of a CDP table for a device is shown below. From this table it can be seen that there are two local routers (R2 and R3) on the local interface FastEthernet0/0. In addition to this information, it can also be seen that R2 and R3 can see R1 on their FastEthernet0/0 interfaces, with further analysis, because R1 can see R2 and R3 on the same local interface it can be inferred that there is a switch connecting all three devices.
 
 \begin{lstlisting}
 R1# show cdp neighbors
@@ -663,7 +659,7 @@ With regards to this project, OnePK will be used in the Network Feedback section
 
 A key feature of the simulation tool is the ability to replicate a 'Real-world' network in emulated space. In order to gather the information required for this feature an extra tool set for Network Discovery has been created. This allows a user to discover devices on the network and extract interface information and router configurations in order to build an emulated instance of the network.
 
-For the development of this Router Discovery tool the above topology was created and used. As explained earlier this is implemented within GNS3 to utilise it's simulation of real IOS images. The above shows a Topology I have created as a use-case for emulation testing, an Ubuntu 14.04 server is also attached to the topology will which be used for the Network Discovery portion of the tool. In addition to this server, a `cloud' object is also connected, this provides internet access to the Lab through a bridged interface on the local machine.
+For the development of this Router Discovery tool the above topology was created and used. As explained earlier this is implemented within GNS3 to utilise its simulation of real IOS images. The above shows a Topology I have created as a use-case for emulation testing, an Ubuntu 14.04 server is also attached to the topology will which be used for the Network Discovery portion of the tool. In addition to this server, a `cloud' object is also connected, this provides internet access to the Lab through a bridged interface on the local machine.
 
 The Ubuntu server is implemented using VirtualBox integration within GNS3 and allows direct connection to the 172.30.0.0/24 network. This Ubuntu server will hold the tool used for Router Discovery and Configuration Extraction. As this server is sitting on the same private network as all of the routers this allows me to find all the routers using defined ip addresses or through using CDP.
 
@@ -673,7 +669,7 @@ The base lab used for development has been designed to contain different element
 
 \section{Network Documentation}
 
-One key feature of the documentation of a network is the data structure that will define it. As discussed in the design sections, a network can be defined with two documents, the device configurations and the physical layout of the connections. The tool provides the latter through a python object referred to in the code as 'topology' is of class routerList. At it's highest level this object is a list of the devices that are on the network, this code for the class is shown below:
+One key feature of the documentation of a network is the data structure that will define it. As discussed in the design sections, a network can be defined with two documents, the device configurations and the physical layout of the connections. The tool provides the latter through a python object referred to in the code as 'topology' is of class routerList. At its highest level this object is a list of the devices that are on the network, this code for the class is shown below:
 
 \begin{python}
 	class routerList(object):
@@ -752,54 +748,7 @@ This functionality uses a module called ipaddr \citep{ipaddr} which creates an o
 
 As this tool focuses on the emulation of Cisco devices it allows the tool to utilise Cisco standard technologies as a method of interacting with devices. One such technology is Cisco Discovery Protocol (see 4.8.4) which is a protocol enabled on all Cisco devices allowing them to understand the local network. This protocol is sent as a broadcast on the device's local network, the tool takes advantage of this fact as it can `sniff' for a CDP packet in order to discover the closest Cisco Router. To do this, the tool uses an external program called Cisco Discovery Protocol Reporter (CDPR)  \citep{CDPR} to listen on a local interface for a CDP Packet. Once a packet is seen, CDPR returns hostname and IP Address of the device that created the packet.
 
-\begin{python}
-def getLocalCDPInfo(baseRouter):
-	#Function listens on interface for a CDP packet and creates a router if successful. Script closes if no packet found
-	try: #Catches exception generated when CDPR returns null (CDP packet not seen)
-		cdpdiscovery = subprocess.check_output(["cdpr", "-d", "eth0", "-t", "61"])
-		#Starts subprocess for CDP, timeout is set to 61 as default CDP timer is 60
-		#CDP returns the information in lines, below code breaks in into a list and processes the information 
-		cdpList = string.split(cdpdiscovery,'\n')
-		cdpValues = [s for s in cdpList if re.search('value', s)]
-		for idx, val in enumerate(cdpValues):
-			cdpValues[idx] = val.replace(" ", "")
-		for idx, val in enumerate(cdpValues):
-			cdpValues[idx] = val.partition(':')[2]
-		#The below code creates a router object for the baserouter and returns it to main
-		if checkNetworks == True:
-			#Networks ranges have been specified for discovery
-			notInNetwork = True
-			ipAddress = str(cdpValues[1]) + '/32'
-			#Create string to hold device IP address
-			for idx, val in enumerate(specifiedNetworks):
-				#Check each network that has been specified
-				if ipaddr.IPv4Network(ipAddress) in val:
-					#Check the ip address of the device is inside the network
-					#If it is, create a device for it
-					notInNetwork = False
-					baseRouter.addHostname(cdpValues[0])
-					baseRouter.addIpAddress(cdpValues[1])
-					deviceCapability = getCapabilities(baseRouter)
-					baseRouter.addCapability(deviceCapability)
-					return baseRouter
-			if notInNetwork == True:
-				#If the device is not in the network, throw an error
-				print 'Local device is not in specied networks. Aborting Network Discovery'
-				sys.exit()
-		else:
-		#Networks have not been specified, create an object for the device
-		baseRouter.addHostname(cdpValues[0])
-		baseRouter.addIpAddress(cdpValues[1])
-		deviceCapability = getCapabilities(baseRouter)
-		baseRouter.addCapability(deviceCapability)
-		return baseRouter
-	except:
-		#Exception thrown, this will occur when no CDP packet is seen within the timeout of CDPR
-		print 'No CDP packet discovered. Aborting Network Discovery'
-		sys.exit()
-\end{python}
-
-The above code uses a python library called os, this allows the code to create a subprocess on the server in order to run external programs. This subprocess runs CDPR on the eth0 interface and then returns the output from the subprocesses pipe, at which point python saves this to a variable and processes this variable until only the Hostname, IP Address and capabilities of the device remain. Once this information is extracted the tool creates a base router, this is used as a starting point of the Network Discovery process.
+This function is defined in Appendix A, it uses a python library called os, this allows the code to create a subprocess on the server in order to run external programs. This subprocess runs CDPR on the eth0 interface and then returns the output from the subprocesses pipe, at which point python saves this to a variable and processes this variable until only the Hostname, IP Address and capabilities of the device remain. Once this information is extracted the tool creates a base router, this is used as a starting point of the Network Discovery process.
 
 Error handling occurs in this function through the use of a timeout in CDPR. The default send time for a CDP process on a Cisco device is 60 seconds so it can be assumed that if not packet is received after 61 seconds there is no local Cisco device on the network, when this error is hit the tool notifies the user and then closes the script entirely as no further processing can be done.
 
@@ -821,91 +770,130 @@ Once a baseRouter is created, this object is used as a point of entry into the n
 	\end{tabular} 
 \end{figure}
 
-The SNMP interaction consists of one function per SNMP call, in this function the call is made, the data is processed and a list of information related to the call is returned. This is shown below:
+The SNMP interaction consists of one function per SNMP call, in this function the call is made, the data is processed and a list of information related to the call is returned. a pseudo code version of this function is shown below:
 
-\begin{python}
-	def getCDPHostnames(router):
-	#Function makes an SNMP call to the device defined by router. It then processes the returned data into a list of Hostnames which is returned to the updateRouters function
-	#Makes SNMP call and holds the output in a variable
-	hostnameOutput=subprocess.check_output(["snmpwalk", "-v", "2c", "-c", "public", router.ipAddress, "1.3.6.1.4.1.9.9.23.1.2.1.1.6"])
-	#Parse the output until only the IP addresses remain
-	hostnameOutput = string.split(hostnameOutput, '\n')
-	for idx, val in enumerate(hostnameOutput):
-		hostnameOutput[idx] = val.partition('"')[2]
-	for idx, val in enumerate(hostnameOutput):
-		hostnameOutput[idx] = val.replace('"', '')
-	hostnameOutput = filter(None, hostnameOutput)
-	return hostnameOutput
-\end{python}
+\begin{lstlisting}
+function getCDPHostnames(router):
+	Make an SNMP call for hostnames seen in device's CDP table
+	Store the returned data into a variable
+	Parse the output until only the hostnames remain
+	Return a list of hostnames
+\end{lstlisting}
 
-This information is added to the baseRouter object, at this point in the code only the base router and its links are known. At this point a recursive function updateRouters is called. This recursive funtion discovers all remaining devices in the topology. The control for this function is based on whether routers that are currently seen already exist in the topology object, if already known, the routers are ignored. Alternatively, if the routers are unknown an object is created for them and the function is recursively called with the new routers. The function that handles this behaviour is documented in Appendix A, Function updateRouters()
+This information is added to the baseRouter object, at this point in the code only the base router and its links are known. At this point a recursive function updateRouters is called. This recursive funtion discovers all remaining devices in the topology. The control for this function is based on whether routers that are currently seen already exist in the topology object, if already known, the routers are ignored. Alternatively, if the routers are unknown an object is created for them and the function is recursively called with the new routers. The below pseudo code gives shows the logic used in this recursive discovery, the full implementation can be seen in Appendix B.
+\pagebreak
+\begin{lstlisting}
+function updateRouters(updateRouter, topology)
+	Get all hosts connected to updateRouter
+	Get all IP Addresses connected to updateRouter
+	FOR each host identified
+		IF a router does not exist for this host
+			Create a new router for this hostname
+			Get hostnames connected to the new device
+			Get IP Addresses connected to the new device
+			FOR each device connected to the new device
+				Create CDP Object for each connection on the new device
+				Add CDP Object to the new device
+			Add the new device to the Topology
+			Call updateRouters with the new device
+\end{lstlisting}
 
-The function has two distinct paths, it can either add all devices it discovers to the topology. In this case the code following line 52 is executed, a device is added to the topology if it is unknown. An alternative path is the on line 13, the checkNetworks flag is set to true, all devices are checked against the list of required networks and if any do not match they are ignored. This method is effective for removing unwanted devices from the topology, however the connection from other devices to the device in question will still remain. Any links that do not have a defined destination will not create a valid JSON or VIRL file and the emulation engine will fail. In order to avoid this situation, when an unwanted router is encountered it is logged to a global variable, unresponsiveDevices (line 48) after device discovery is complete a function removeUnresponsive() deletes any links with reference to these devices from the topology. This function is shown below:
+The function has two distinct paths, it can either add all devices it discovers to the topology. In this case the code following line 52 is executed, a device is added to the topology if it is unknown. An alternative path is the on line 13, the checkNetworks flag is set to true, all devices are checked against the list of required networks and if any do not match they are ignored. This method is effective for removing unwanted devices from the topology, however the connection from other devices to the device in question will still remain. Any links that do not have a defined destination will not create a valid JSON or VIRL file and the emulation engine will fail. In order to avoid this situation, when an unwanted router is encountered it is logged to a global variable, unresponsiveDevices after device discovery is complete a function removeUnresponsive() deletes any links with reference to these devices from the topology. Pseudo code for this function is shown below:
 
-\begin{python}
-def removeUnresponsive(topology):
-	#Function removes links with reference to unresponsive devices from the topology
-	#Uses set() to create a list of unique entries
-	deviceDelete = set(unresponsiveDevices)
-	#For every unresponsive device:
-	for idx, val in enumerate(deviceDelere):
-		print 'Could not communicate with ' + val + ' it will be removed from the topology'
-		#For every device in the topology
-		for deviceIDX, deviceVal in enumerate(topology.routerList):
-			#For all of the above devices CDP entries (links)
-			for cdpIDX, cdpVal in enumerate(deviceVal.cdp_entries):
-				#If the link connects to the unresponsve device, remove it from the topology
-				if cdpVal.hostname == val:
-					print 'Removing ' + cdpVal.srcPort + ' from ' + deviceVal.hostname
-					deviceVal.removeCDPEntry(cdpVal.srcPort)
-\end{python}
+\begin{lstlisting}
+fuction removeUnresponsive(topology):
+	Create a set of unresponsive devices
+	FOR every unresponsive device:
+		FOR every device in the topology
+			FOR every cdp entry in this device (links)
+				If the link connects to the unresponsve device, remove it from the topology
+\end{lstlisting}
 
-Once the unresponsive devices are removed from the topology the first stage of the emulation layout is complete, however in it's current form the topology will be rejected by VIRL. This is because VIRL only supports GigabitEthernet interfaces in an emulation, the topology needs to be reformatted to remove any FastEthernet or Serial connections and replace them. This is handled by formatInterfaces(). The function looks at each device in the topology, inspecting each interface on the device and mapping the interface to a GigabitEthernet connection on the emulation. It maintains a list (intChanges) of each host and the interfaces that were changed on the host, saving them to a file for use in the configFormatter section of the tool.
+Once the unresponsive devices are removed from the topology the first stage of the emulation layout is complete, however in its current form the topology will be rejected by VIRL. This is because VIRL only supports GigabitEthernet interfaces in an emulation, the topology needs to be reformatted to remove any FastEthernet or Serial connections and replace them. This is handled by formatInterfaces(). The function looks at each device in the topology, inspecting each interface on the device and mapping the interface to a GigabitEthernet connection on the emulation. It maintains a list (intChanges) of each host and the interfaces that were changed on the host, saving them to a file for use in the configFormatter section of the tool.
 
-When the function is nearing it's end it passes this list on to the replaceInterfaces() function. This function iterates intChanges, looking at every device in the topology and each CDP entry for that device. When the function meets the current device in intChanges it looks for any CDP entries that have a source interface of the interface to be changed, once it is found the interface name is replaced with it's emulated counterpart. At this stage in the discovery process there can be multiple CDP entries with the same source interface, this occurs when there is a switch in the network. When designing this function this caused issues as there can be an expectation that CDP entries map to interfaces in a one-to-one fashion, in the original version of this function a flag was set when a source interface was changed. However, this was naive as when this code was deployed to topologies that were not just point-to-point links the code would fail as pre-emulation interfaces would remain after the function ended.
+When the function is nearing its end it passes this list on to the replaceInterfaces() function. This function iterates intChanges, looking at every device in the topology and each CDP entry for that device. When the function meets the current device in intChanges it looks for any CDP entries that have a source interface of the interface to be changed, once it is found the interface name is replaced with its emulated counterpart. At this stage in the discovery process there can be multiple CDP entries with the same source interface, this occurs when there is a switch in the network. When designing this function this caused issues as there can be an expectation that CDP entries map to interfaces in a one-to-one fashion, in the original version of this function a flag was set when a source interface was changed. However, this was naive as when this code was deployed to topologies that were not just point-to-point links the code would fail as pre-emulation interfaces would remain after the function ended.
 
-\begin{python}
-def replaceInterfaces(topology, intChanges):
-	#Function iterates through the changeList and makes changes to the interface on the device and the CDP Entry on any device
-	#connecting to the device in question
+\begin{lstlisting}
+function replaceInterfaces(topology, intChanges):
+	FOR each change entry
+		FOR every device on the topology
+			FOR each device's CDP entries
+				IF the device is the one to be changed and this is the port to be changed
+					Update the port
+				IF the device is not the one to be changed but has a connection to the device in question
+					Update the remote port in the CDP entry
 	
-	#For each change entry
-	for i, changeEntry in enumerate(intChanges.changeList):
-		#Look at every device on the topology
-		for j, routerVal in enumerate(topology.routerList):
-			#Look at each device's CDP entries
-			for k, val in enumerate(routerVal.cdp_entries):
-				#If the device is the one to be changed and this is the port to be changed
-				if routerVal.hostname == intChanges.changeList[i].hostname and val.srcPort == intChanges.changeList[i].orignalPort:
-					#Update the port
-					topology.routerList[j].cdp_entries[k].srcPort = intChanges.changeList[i].newPort
-				#If the device is not the one to be changed but has a connection to the device in question
-				elif val.hostname == intChanges.changeList[i].hostname and val.dstPort == intChanges.changeList[i].orignalPort:
-					#Update the remote port in the CDP entry
-					topology.routerList[j].cdp_entries[k].dstPort = intChanges.changeList[i].newPort	
-\end{python}
+\end{lstlisting}
 
 One important aspect of this function is ensuring that CDP entries of devices that connect to the device in intChanges are also updated, the second statement in the function allows for this and checks the CDP entry on every device, if the device has a CDP entry connecting to the current device to be updated the destination port is updated. Doing this ensures that all links in the emulation connect to the correct location.
 
-At this point in the Network Discovery process the physical layout of the topology is known, however there is additional information that can be extracted from the topology, one example is the identification of Layer-2 devices such as switches. One indication of such device is a router including two CDP entries on one interface, this shows that there are two local devices connected through one physical cable which is not possible without some layer-2 device in the middle. To accommodate switches the tool has a function findSwitches() which is documented in Appendix B. This function again iterates over all the devices in the topology, for each device it notes the occurrence of each local interface in the CDP entries. If any encountered interface already exists in the seen set it is noted as a duplicate and added to the dupes list.
+At this point in the Network Discovery process the physical layout of the topology is known, however there is additional information that can be extracted from the topology, one example is the identification of Layer-2 devices such as switches. One indication of such device is a router including two CDP entries on one interface, this shows that there are two local devices connected through one physical cable which is not possible without some layer-2 device in the middle. To accommodate switches the tool has a function findSwitches() which is documented in Appendix C. This function again iterates over all the devices in the topology, for each device it notes the occurrence of each local interface in the CDP entries. If any encountered interface already exists in the seen set it is noted as a duplicate and added to the dupes list.
 
 The function then inspects this dupes list (if any duplicates exist) for each duplicate a switch is created for the LAN segment connected to the interface. This switch is given a hostname and CDP entries are created both for the local interface and for the remote interfaces that are connected to the local link. This effectively splits the connection in half, inserting a switch into the link which connects to both routers. Once the switch is created, another function updateSwitchLinks() is called which will update the CDP entries on the local and destination interfaces.
 
-The function updateSwitchLinks() iterates through each update, looking at each host's CDP entries until the defined in the update is seen
+The function updateSwitchLinks() iterates through each update, looking at each host's CDP entries until the defined in the update is seen. At this point the function replaces the remote devices CDP information with the new entries generated for the connections to the switch. At this the topology is complete and ready to be passed to the next stage.
+
+The second stage of the discovery process is configuration extraction from the devices defined in the topology. For reasons explained at the end of this section, an external tool called Rancid \citep{Rancid} was used for this section of discovery. The configuration extraction is defined in the file rancidSetup.py, in this script the router dictionary produced by networkDiscovery is used to create a group of devices in rancid's configuration. Once a group is created and defined the script logs in as the rancid user on the host. Once logged in the rancid user runs the script rancid-cvs, this script creates a CVS repository for the group that has been created. The user then adds the configuration for the routers, first adding each hostname to router.db within the group which adds the router to the extraction process. After adding this it then adds the login information for each router to rancid's .cloginrc file. This file defines the method of connection, which is ssh with 3DES encryption for this script. It also adds the login credentials which must be configured on the router. Once this information is saved the script rancid-run is called, this starts the configuration extraction process.
+
+While creating this section of the code it was difficult to produce a method that did not breach Requirement 8 in the Requirements section (4.8). This requirement relates to security methods of interacting with a Router on a Production network and requiring this tool to not introduce security flaws in these networks. In initial designs the tool would extract configurations itself using SNMP to poll each router, however when reading around this subject it became clear that this method of interaction with the routers would require Read/Write access on SNMP. This access was defined on a device level and not to a single OID, and thus would leave any devices exposed to exploitation if this access was mismanaged. Due to this the decision was taken to offload this section to a standard tool in the Networks world. Rancid was chosen due to its lightweight design and licensing which allows its use without any additional purchases or fees.
+
+One issues faced when implementing RANCID on my lab network was that by default Cisco routers are set to SSH Version 2, this requires additional configuration on the device such as a domain and generation of an RSA key for access. For the design and testing phase of this development this expectation was removed through the use of `ip ssh version 1' on each device. However in normal operation SSH will be set up on each device and this error will not occur.
+
+\subsection{Network Entry}
+
+Network Entry works in a similar fashion to Network Discovery, however the devices on the emulation are created by reading a json file documenting the physical layout of the topology and also adding the configuration files for each device in the 'config-files' directory in the script's location. The script first loads the topology json file, creating a new router object for each node defined and adding it to the overall topology. The second operation loads the link information from the json, however this needs to mapped to CDP entries in order to follow the networkDiscovery convention. To do this the sourceRouter for each link is read and then mapped to the correct device in the topology. This creates a full network.
+
+At this point the topology file is ready to have its interfaces mapped to emulated  as was the case in networkDiscovery. The topology is passed through the same formatInterfaces function as before and interfaces are mapped to their emulated counterparts. The same routerDictionary and interfaceChanges lists are created and saved to a file. From this point forward both the discovered and input networks are treated in the same way. 
+
+\section{Configuration Editing}
+
+Before creating a simulation the Cisco configuration files need to be edited in order to match the new layout defined in the topology files. Specifically the interfaces need to be replaced with their emulated versions and an additional interface needs to be added for the management network when the emulation is live. Due to the fact that a Cisco configuration file is based on a hierarchy to edit the file directly as changing information under an interface could break the hierarchical link between the interface and its children. In order to overcome this issue, the tool uses an additional python library, ciscoconfparse \citep{ciscoconfparse}. This library allows python to read a configuration file and break it down into the relevant parent-child relationships that are required to make a clean edit to the interface.
+
+The extraction of the parent-child relationships in a configuration file allows the tool to make changes to interfaces without any loss in configuration. For example, an interface that has been set to passive in a routing protocol would need to be reflected in an emulation. Removal of a passive interface could introduce errors into an emulation as this interface can now negotiate routing with the devices it connects to, this could have impact of the routing decisions made on the topology. Maintaining this mirrored configuration ensures that the emulation generated for a network is a as true to real hardware as possible.
+
+An additional feature that was considered was the type of interface before it is converted to an emulation Gigabit interface. When representing a FastEthernet interface on an emulated network it replacing the port in name-only would be representing a link with a maximum bandwidth of 100mb/s with one that is 1000mb/s. This direct replacement would break the routing decisions as all links on the topology would become an equal weighting. In order to prevent this the tool appends a child to each interface relating to the original bandwidth of the link, for an interface that was originally FastEthernet a `bandwidth 100000' child is added to the interface. If an interface was originally a serial connection, a `bandwidth 2000' child is added, this is the speed of an E1 connection. If any such configuration exists under the interface it remains and no action is taken.
+
+After the relevant changes are made to interfaces on the configuration, a new interface is added. Within VIRL there the ability to connect the topology through a management network, this as called a Private Simulation Network. In order to allow this network to function an additional interface, GigabitEthernet0/0 is added to each configuration file.
+
+Finally any information pertaining to security on the device is removed from the configuration. This is to allow access to the device when it is on the emulation. Information such as the the login credentials and enable password are removed, in addition to this the vty lines on the device or opened with the `no login' command.
 
 \section{VIRL File Creation}
 
-The VIRL engine expects a defined file type which is used to define the topology layout and the configurations used on first run of the simulation. In order to have the real-world network elements correctly represented in the simulation the topology and network configurations need to be correctly reflected in the VIRL file. 
+As discussed in Section 4.4 an emulation in Cisco VIRL is defined through an xml-based file known as a virl file. In order the data gathered up to this point to be represented in a valid virl format the tool uses an external library called lxml \citep{lxml} to create xml tags based on the topology. This allows the tool to quickly generate correct xml that the VIRL host recognises as valid.
 
-In order to convert the extracted data into the VIRL file I have created a python program on the local server. This program will parse each router in the topology and it's accompanying configuration file and create a correct virl file. Once this parsing is complete the topology is ready for simulation.
+This section of the tool is outlined in the file virlCreation.py. In this file the tags are first created to hold the xml and virl specifications which are then added to the xml object. After this, the script adds information to the topology as a whole, such as specifying that CDP is enabled and that the devices are running the onePK API. One key feature that is added at this point is is setting for a management network on the emulation, setting this to `exclusive' specifies that the management network is local to the emulation and does not interact with other simulations.
+
+Once the settings are defined the script then loads the routerDictionary which was defined earlier in the tool. It then begins to iterate over each device, creating a node tag for each and setting the device to an IOSv Router for any routers seen or to a SEGMENT for any switches seen.
+
+One issue encountered when designing this section of the tool was finding a way to efficiently represent a switch on the network. Losing the connectivity provided by a switch would introduce extra links to the topology that will in turn create discrepancies between the emulated routing and the real hardware routing. Due to this fact, the tool uses the device SEGMENT. This device produces a layer-2 broadcast domain which acts in a similar fashion to the switch. In later versions of the VIRL software these segments have been replaced with `dumb' switches. These act in a similar fashion and do not make real switching decisions, however a full IOSvL2 image is due to be added in the next version of Cisco VIRL.
+
+Once the node is created for a device the configuration is then added, to do this the script loads the router's `.edited' configuration file that has been produced in the local `config-files' directory. This configuration was produced in the previous section. The tool appends the contents of this file to the nodes `config` attribute. Once the configuration has been added the tool then iterates of the routers CDP values, adding an interface for each one. At this point the CDP Values give unique interfaces as switches have been added to the topology. This interface does not dictate the physical links in the topology.
+
+An additional entry at this point is made to the emulated topology. This is an ubuntu server which will act as a gateway into the network. This implementation uses two distinct objects in the virl file. The first is the server, this is created using a cloud-init script defined in Appendix F. This sets up basic access on the server such as user accounts and home directories. An interface is added to the server for its connection to the internet. The second object is a SNAT Object, this provides Network Address Translation between the emulation and the outside world, when configured this object allows inbound connections to the server.
+
+The final part of this file defines the connections between the devices in the topology. This section proved difficult as the design for a VIRL file does not match the design that has been used for the storage of information up to this point in the design. The links in a VIRL file are mapped using the relative position of the devices in the file rather than the identifier that has been assigned, in addition to this there is only one definition of a link regardless of the source and destination device. This introduced additional complexity to generation of the virl file. This was overcome by adding an additional check against a list of existing interfaces on the topology file.
+
+Once all devices and links have been added to the xml object the file is generated and saved locally as the file `topology.virl'
 
 \section{Simulation}
 
-Once a correct .virl file has been created the tool is ready to begin the simulation. This can be done in one of two ways, either by opening the VM Maestro client and loading the simulation manually...
+At this stage of the implementation an additional barrier to the design was introduced. The VIRL host that is used for all simulations is only contactable if the host machine is connected to the Loughborough University VPN. This added a requirement that the tool must be run on the Loughborough VPN. A second requirement was that the local host machine must have a shared interface so the Lab design in Section 5.1 could connect to the Internet. It is now understood that a security requirement on the Loughborough VPN dictates that any devices with a shared network interface is blocked from connecting, this created a conflict in the design.
 
-\textit{Note: The available simulation methods supported within VIRL are currently not understood. It is clear that the simulation can be started using the GUI with a correct virl file, however this would not work well with the tool design as it requires the use of another program. The desired method would be to use a command line interface to to create a simulation. Details of that simulation can then be gathered using the REST API on the VIRL server.}
+In order to overcome this issue, the design now uses two identical servers but with differing network connections in order to create a simulation. In this design the server on the lab network gathers and collates the information about the network, produces a virl file and then uploads this file to an intermediate SFTP server. Once this has been uploaded the lab is powered down and the same server is loaded, however this instance uses a traditional NAT connection to the internet. This allows it access to Loughborough University infrastructure and the internet. This server downloads the VIRL file from the SFTP server and pushes it to VIRL to create an emulation.
 
-Simulations within VIRL will be created using a setting on the simulation engine known as a 'Private Simulation Network'. This option creates a management network on the simulation which allows access to the management ports of the Routers on the topology. In addition to this it also provides a Linux container (LXC) on the network on this management network. One issue that arises from keeping this tool separate from VM Maestro is that the ip addressing schema produced by VIRL for these hosts is only viewable from the GUI. I have identified that this information is available be sending an authenticated REST request to the API running on the VIRL server, the response to this will provide information regarding the simulation details. A particular detail of note is information relating to this LXC host is it's ip address (Which is defined by VIRL and is allocated per simulation) or a unique port number to connect on via the VIRL server ip. This allows access from outside of the VIRL simulation. The below output from an API call details this information:
+The simulation aspect is handled in the file uploadTopology.py. This file connects to the Cisco VIRL REST API in order to create and retrieve information about simulations. The script begins by loading the virl file into a variable, it then creates a POST request to the API's `/simengine/rest/launch' rule. In this request it attaches the virl file and a defined naming scheme to be included in the simulation ID. The server then makes a GET request to the API's `/roster/rest/' rule, this returns information for every node on every simulation for the user that is authenticated. The script iterates over this information, for every IOSv need it sees for the simulation made it keeps a dictionary of the IP Address and hostname. When the function meets the `virl-sim-server' for the current simulation it saves information such as it's internal address, external address and the port number for which a user can access the server's console line.
+
+The information gathered about the IOSv hosts and the virl-sim-server are used in the function setupServer(). At this stage in the simulation the 
+
+\begin{figure}[h!]
+	\caption{Management Network Design}
+	\centering
+	\includegraphics[width=0.7\textwidth]{managementNet.png}
+\end{figure}
+
+
+
+Simulations within VIRL will be created using a setting on the simulation engine known as a 'Private Simulation Network'. This option creates a management network on the simulation which allows access to the management ports of the Routers on the topology. In addition to this it also provides a Linux container (LXC) on the network on this management network. One issue that arises from keeping this tool separate from VM Maestro is that the ip addressing schema produced by VIRL for these hosts is only viewable from the GUI. I have identified that this information is available be sending an authenticated REST request to the API running on the VIRL server, the response to this will provide information regarding the simulation details. A particular detail of note is information relating to this LXC host is its ip address (Which is defined by VIRL and is allocated per simulation) or a unique port number to connect on via the VIRL server ip. This allows access from outside of the VIRL simulation. The below output from an API call details this information:
 
 \begin{lstlisting}
 
@@ -942,7 +930,7 @@ IOSv instances, the focus of this tool support SNMP just as a physical router wo
 
 \subsection{Netflow}
 
-Cisco Flexible Netflow is supported by Cisco IOSv and gives a more detailed view of traffic across router interfaces. Configuring each IOSv instance as a Flow Exporter and adding an collector such as Cacti will provide a detailed breakdown of traffic based on it's Layer 3 and 4 information. This adds further granularity to the testing evidence that is created.
+Cisco Flexible Netflow is supported by Cisco IOSv and gives a more detailed view of traffic across router interfaces. Configuring each IOSv instance as a Flow Exporter and adding an collector such as Cacti will provide a detailed breakdown of traffic based on its Layer 3 and 4 information. This adds further granularity to the testing evidence that is created.
 
 \subsection{Packet Capture}
 
@@ -951,11 +939,11 @@ All interfaces within VIRL have a defined 'tap' interface on the VIRL Server, th
 \textit{Note: Access to these tap interfaces may require access to the VIRL server in the admin role}
  
 
-\section{Testing Scenarios}
+\chapter{Testing}
 
 To support the development of this project I have created a set of network topologies with complex configurations. These are a representation of a network which a user may wish to simulate and can demonstrate added complexities which may be encountered in a real-world networks. In addition to this, they provide an already established routing platform which can be used for testing network changes. As described in the previous section "Equipment Used" these topologies have been created inside of GNS3.
 
-\subsection{Topology 1: Multi-area OSPF}
+\section{Topology 1: Multi-area OSPF}
 
 \begin{center}
 \includegraphics[width=0.8\textwidth]{OSPF-Topology.png}
@@ -967,9 +955,9 @@ The topology represents the OSPF backbone of a large enterprise network, it incl
 
 In addition to the routes being introduced via the loopbacks on R4 and R5 the topology also injects external routes into OSPF on R1. These are static routes defined on R1 which represent routes from either the Internet or routes from another routing protocol such as EIGRP, IS-IS or BGP. In this form the routes are sent to null 0 (blackhole) as there is no need for connectivity to them.
 
-\subsection{Topology 2: EIGRP Based Routing}
+\section{Topology 2: EIGRP Based Routing}
 
-\subsection{Topology 3: Service Provider BGP Topology}
+\section{Topology 3: Service Provider BGP Topology}
 
 \chapter*{Implementation Notes}
 
@@ -1065,6 +1053,55 @@ ifconfig eth1 up 10.254.0.36 netmask 255.255.255.0
 \bibliography{bibliography}
 
 \begin{appendices}
+
+\chapter{Function getLocalCDPInfo()}
+\begin{python}
+def getLocalCDPInfo(baseRouter):
+	#Function listens on interface for a CDP packet and creates a router if successful. Script closes if no packet found
+	try: #Catches exception generated when CDPR returns null (CDP packet not seen)
+		cdpdiscovery = subprocess.check_output(["cdpr", "-d", "eth0", "-t", "61"])
+		#Starts subprocess for CDP, timeout is set to 61 as default CDP timer is 60
+		#CDP returns the information in lines, below code breaks in into a list and processes the information 
+		cdpList = string.split(cdpdiscovery,'\n')
+		cdpValues = [s for s in cdpList if re.search('value', s)]
+		for idx, val in enumerate(cdpValues):
+			cdpValues[idx] = val.replace(" ", "")
+		for idx, val in enumerate(cdpValues):
+			cdpValues[idx] = val.partition(':')[2]
+		#The below code creates a router object for the baserouter and returns it to main
+		if checkNetworks == True:
+			#Networks ranges have been specified for discovery
+			notInNetwork = True
+			ipAddress = str(cdpValues[1]) + '/32'
+			#Create string to hold device IP address
+			for idx, val in enumerate(specifiedNetworks):
+				#Check each network that has been specified
+				if ipaddr.IPv4Network(ipAddress) in val:
+					#Check the ip address of the device is inside the network
+					#If it is, create a device for it
+					notInNetwork = False
+					baseRouter.addHostname(cdpValues[0])
+					baseRouter.addIpAddress(cdpValues[1])
+					deviceCapability = getCapabilities(baseRouter)
+					baseRouter.addCapability(deviceCapability)
+					return baseRouter
+			if notInNetwork == True:
+				#If the device is not in the network, throw an error
+				print 'Local device is not in specied networks. Aborting Network Discovery'
+				sys.exit()
+		else:
+		#Networks have not been specified, create an object for the device
+		baseRouter.addHostname(cdpValues[0])
+		baseRouter.addIpAddress(cdpValues[1])
+		deviceCapability = getCapabilities(baseRouter)
+		baseRouter.addCapability(deviceCapability)
+		return baseRouter
+	except:
+		#Exception thrown, this will occur when no CDP packet is seen within the timeout of CDPR
+		print 'No CDP packet discovered. Aborting Network Discovery'
+		sys.exit()
+\end{python}	
+
 \chapter{Function updateRouters()}
 \begin{python}
 def updateRouters(updateRouter, topology):
@@ -1185,7 +1222,7 @@ def findSwitches(topology):
 					#Hostname increments per device
 					switchHostname = 'SW' + str(switchID)
 					newSwitch.addHostname(switchHostname)
-					#Set it's capability
+					#Set its capability
 					newSwitch.addCapability('switch')
 					#First local update holds the current device and switch updates
 					localUpdate = switchUpdate([])
@@ -1226,6 +1263,262 @@ def findSwitches(topology):
 					#Function call to update the CDP information on the routers
 					updateSwitchLinks(topology, switchUpdates, switchHostname)
 \end{python}
+
+\chapter{topology.json Example}
+\begin{lstlisting}
+{
+	"nodeList": [
+		{
+			"ipAddress": "172.30.0.1", 
+			"hostname": "R1", 
+			"deviceType": "Router", 
+			"deviceNo": 0
+		}, 
+		{
+			"ipAddress": "172.30.0.2", 
+			"hostname": "R2", 
+			"deviceType": "Router", 
+			"deviceNo": 1
+		}, 
+		{
+			"ipAddress": "172.30.0.3", 
+			"hostname": "R3", 
+			"deviceType": "Router", 
+			"deviceNo": 2
+		}, 
+		{
+			"ipAddress": "", 
+			"hostname": "SW1", 
+			"deviceType": "switch", 
+			"deviceNo": 3
+		}
+], 
+	"linksList": [
+		{
+			"dstIpAddress": "", 
+			"dstRouter": "SW1", 
+			"srcRouter": "R1", 
+			"target": 3, 
+			"srcPort": "GigabitEthernet0/1", 
+			"value": 1, 
+			"source": 0, 
+			"dstPort": "1"
+		}, 
+		{
+			"dstIpAddress": "", 
+			"dstRouter": "SW1", 
+			"srcRouter": "R2", 
+			"target": 3, 
+			"srcPort": "GigabitEthernet0/1", 
+			"value": 1, 
+			"source": 1, 
+			"dstPort": "3"
+		}, 
+		{
+			"dstIpAddress": "", 
+			"dstRouter": "SW1", 
+			"srcRouter": "R3", 
+			"target": 3, 
+			"srcPort": "GigabitEthernet0/1", 
+			"value": 1, 
+			"source": 2, 
+			"dstPort": "5"
+		}, 
+		{
+			"dstIpAddress": "", 
+			"dstRouter": "R1", 
+			"srcRouter": "SW1", 
+			"target": 0, 
+			"srcPort": "0", 
+			"value": 1, 
+			"source": 3, 
+			"dstPort": "GigabitEthernet0/1"
+		}, 
+		{
+			"dstIpAddress": "", 
+			"dstRouter": "R2", 
+			"srcRouter": "SW1", 
+			"target": 1, 
+			"srcPort": "1", 
+			"value": 1, 
+			"source": 3, 
+			"dstPort": "GigabitEthernet0/1"
+		}, 
+		{
+			"dstIpAddress": "", 
+			"dstRouter": "R3", 
+			"srcRouter": "SW1", 
+			"target": 2, 
+			"srcPort": "2", 
+			"value": 1, 
+			"source": 3, 
+			"dstPort": "GigabitEthernet0/1"
+		}
+	]
+}
+\end{lstlisting}
+
+\chapter{Cisco Configuration File Example}
+\begin{lstlisting}
+version 12.4
+service timestamps debug datetime msec
+service timestamps log datetime msec
+no service password-encryption
+!
+hostname R3
+!
+boot-start-marker
+boot-end-marker
+!
+!enable password <removed>
+!
+no aaa new-model
+memory-size iomem 5
+no ip icmp rate-limit unreachable
+ip cef
+!
+no ip domain lookup
+!
+multilink bundle-name authenticated
+!
+!username rancid password <removed>
+archive
+log config
+hidekeys
+! 
+ip tcp synwait-time 5
+ip ssh version 1
+!
+interface Loopback0
+	ip address 3.3.3.3 255.255.255.255
+!
+interface FastEthernet0/0
+	ip address 192.168.0.1 255.255.255.0
+	duplex auto
+	speed auto
+!
+interface Serial0/0
+	description SER-R4
+	bandwidth 500
+	ip address 172.30.100.1 255.255.255.252
+	clock rate 2000000
+!
+interface FastEthernet0/1
+	ip address 172.30.0.3 255.255.255.0
+	duplex auto
+	speed auto
+!
+interface Serial0/1
+	no ip address
+	shutdown
+	clock rate 2000000
+!
+	interface Serial0/2
+	no ip address
+	shutdown
+	clock rate 2000000
+!
+interface Serial0/3
+	no ip address
+	shutdown
+	clock rate 2000000
+!
+router ospf 1
+	router-id 3.3.3.3
+	log-adjacency-changes
+	area 100 range 10.100.0.0 255.255.248.0
+	network 3.3.3.3 0.0.0.0 area 0
+	network 172.30.0.3 0.0.0.0 area 0
+	network 172.30.100.0 0.0.0.3 area 100
+	network 192.168.0.0 0.0.0.255 area 150
+!
+ip forward-protocol nd
+!
+no ip http server
+no ip http secure-server
+!
+snmp-server community public RO
+no cdp log mismatch duplex
+!
+control-plane
+!
+line con 0
+	exec-timeout 0 0
+	privilege level 15
+	logging synchronous
+line aux 0
+	exec-timeout 0 0
+	privilege level 15
+	logging synchronous
+line vty 0 4
+	login local
+!
+end
+
+\end{lstlisting}
+
+\chapter{Virl Server Cloud Init}
+
+\begin{lstlisting}
+#cloud-config
+hostname: virl-sim-server
+runcmd:
+- start ttyS0
+- systemctl start getty@ttyS0.service
+- ifconfig eth1 up 10.254.0.36 netmask 255.255.255.0
+- sed -i '1 i 127.0.0.1 virl-sim-server' /etc/hosts
+- sed -i '/^\s*PasswordAuthentication\s\+no/d' /etc/ssh/sshd_config
+- service ssh restart
+- service sshd restart
+users:
+- default
+- gecos: User configured by VIRL Configuration Engine 0.10.10
+lock-passwd: false
+name: cisco
+plain-text-passwd: cisco
+shell: /bin/bash
+ssh-authorized-keys:
+- VIRL-USER-SSH-PUBLIC-KEY
+- ssh-rsa AAAAB3NzaC1yc2EAAAABJQAAAQEAkZj/7NygpIng1Sw/+Pd1yM6fjyfHNp9fnZ3UvJPATkFrm8+w5TynYuz/uNk4G0pR/ffT9SLMbvUXKbyJQqlsTCx9PwwFB92AY6BZTOfa9Zy/J4F19tCBMoIaGf7YmJVFLSTkiSrmxPMqlWsDD6rx3b70MLihkCDcvmzHTeDNT2WGkwTjqfUJyZ7PMvgwhU80QmB3z3H/JikWWDZWUQiT7kf/7nSCG1MOWILm6Gj1Grxe4ek0+PzO8zyLhKr1TYIqoawO0HiMVb13NTBOJIMQ0T0T8uh1wphjXPdLzPXQ25iUs1sRF+9R8ZPg3CT46Wx//YmxdwodHTxW7bShq1sKJw==
+rsa-key-20150211
+sudo: ALL=(ALL) ALL
+- gecos: User configured by VIRL Configuration Engine 0.10.10
+lock-passwd: false
+name: cisco
+plain-text-passwd: cisco
+shell: /bin/bash
+ssh-authorized-keys:
+- VIRL-USER-SSH-PUBLIC-KEY
+- ssh-rsa AAAAB3NzaC1yc2EAAAABJQAAAQEAkZj/7NygpIng1Sw/+Pd1yM6fjyfHNp9fnZ3UvJPATkFrm8+w5TynYuz/uNk4G0pR/ffT9SLMbvUXKbyJQqlsTCx9PwwFB92AY6BZTOfa9Zy/J4F19tCBMoIaGf7YmJVFLSTkiSrmxPMqlWsDD6rx3b70MLihkCDcvmzHTeDNT2WGkwTjqfUJyZ7PMvgwhU80QmB3z3H/JikWWDZWUQiT7kf/7nSCG1MOWILm6Gj1Grxe4ek0+PzO8zyLhKr1TYIqoawO0HiMVb13NTBOJIMQ0T0T8uh1wphjXPdLzPXQ25iUs1sRF+9R8ZPg3CT46Wx//YmxdwodHTxW7bShq1sKJw==
+rsa-key-20150211
+sudo: ALL=(ALL) ALL
+write_files:
+- path: /etc/init/ttyS0.conf
+owner: root:root
+content: |
+# ttyS0 - getty
+# This service maintains a getty on ttyS0 from the point the system is
+# started until it is shut down again.
+start on stopped rc or RUNLEVEL=[12345]
+stop on runlevel [!12345]
+respawn
+exec /sbin/getty -L 115200 ttyS0 vt102
+permissions: '0644'
+- path: /etc/systemd/system/dhclient@.service
+content: |
+[Unit]
+Description=Run dhclient on %i interface
+After=network.target
+[Service]
+Type=oneshot
+ExecStart=/sbin/dhclient %i -pf /var/run/dhclient.%i.pid -lf /var/lib/dhclient/dhclient.%i.lease
+RemainAfterExit=yes
+owner: root:root
+permissions: '0644'
+
+\end{lstlisting}
+
+
 \end{appendices}
 
 \end{document}
