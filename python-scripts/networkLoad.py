@@ -197,9 +197,12 @@ def main():
 			routerDict[routerVal.hostname] = routerVal.ipAddress
 	print routerDict
 	pickle.dump(routerDict, open("routerDictionary.p", "wb"))
-	with pysftp.Connection('178.62.24.178', username='sftp', private_key='/home/rob/.ssh/id_rsa') as sftp:
-		with sftp.cd('json-files'):
-			sftp.put('topology.json')
+	try:
+		with pysftp.Connection('178.62.24.178', username='sftp', private_key='/home/rob/.ssh/id_rsa') as sftp:
+			with sftp.cd('json-files'):
+				sftp.put('topology.json')
+	except:
+		print 'SSH Key for server is missing from host'
 
 if __name__ == "__main__":
 	main()
