@@ -73,45 +73,50 @@ if __name__ == "__main__":
 	payload = {'file': 'manual@launch_topo'}
 
 	#Makes a call to the VIRL host, creates a simulation and stores the returned data to a variable
-	result = requests.post(url, auth=(username,password), params=payload, data=topology, headers=headers)
-	#The text of result is an ID for the simulation
-	simulationName = result.text
-	print 'Simulation ID is: ' + simulationName
-	print 'Waiting for simulation launch'
-	time.sleep(45) #Required as it takes time for ip addresses to be generated
-	print 'Gathering simulation information'
-	#Makes a call for information about current hosts
-	hostInformation = requests.get(hostsURL, auth=(username, password))
-	#Returned data is JSON, it is parsed by the JSON library
-	hostJSON = json.loads(hostInformation.text)
-	ipDictionary = {}
-	serverManIP = ''
-	serverExtIP = ''
-	SNATAddress = ''
-	consolePort = ''
-	deviceConsolePort = '' 
+	try:
+		result = requests.post(url, auth=(username,password), params=payload, data=topology, headers=headers, timeout=5)
+		#The text of result is an ID for the simulation
+		simulationName = result.text
+		print 'Simulation ID is: ' + simulationName
+		print 'Waiting for simulation launch'
+		time.sleep(45) #Required as it takes time for ip addresses to be generated
+		print 'Gathering simulation information'
+		#Makes a call for information about current hosts
+		try:
+			hostInformation = requests.get(hostsURL, auth=(username, password), timeout=5)
+		except:
+			print 'VIRL server did not respond within timeout'
+		#Returned data is JSON, it is parsed by the JSON library
+		hostJSON = json.loads(hostInformation.text)
+		ipDictionary = {}
+		serverManIP = ''
+		serverExtIP = ''
+		SNATAddress = ''
+		consolePort = ''
+		deviceConsolePort = '' 
 
-	#Deletes user cell of json as no longer needed
-	del hostJSON['UUID']
+		#Deletes user cell of json as no longer needed
+		del hostJSON['UUID']
 
-	#Iterates over all nodes available for a user
-	for key, val in hostJSON.iteritems():
-		#Stores the node information in a variable
-		rawDeviceInfo = val
-		#If the device is under the current simulation
-		if rawDeviceInfo['simID'] == simulationName:
-			for devKey, devVal in rawDeviceInfo.iteritems():
-				#If an IOS node is seen, get it's name and management IP
-				if ((devKey == 'NodeSubtype') and (devVal == 'IOSv')):
-					hostname = rawDeviceInfo['NodeName']
-					managementIP = rawDeviceInfo['managementIP']
-					ipDictionary[str(hostname)] = str(managementIP)
-				#If the virl-sim-server is found get information about it
-				if ((devKey == 'NodeName') and (devVal == 'virl-sim-server')):
-					serverManIP = rawDeviceInfo['managementIP']
-					serverExtIP = rawDeviceInfo['internalAddr']
-					SNATAddress = rawDeviceInfo['externalAddr']
-					consolePort = rawDeviceInfo['PortConsole']
-	#Call function to configure virl-sim-server
-	setupServer(serverManIP, serverExtIP, virlHost, consolePort, SNATAddress, ipDictionary)
-
+		#Iterates over all nodes available for a user
+		for key, val in hostJSON.iteritems():
+			#Stores the node information in a variable
+			rawDeviceInfo = val
+			#If the device is under the current simulation
+			if rawDeviceInfo['simID'] == simulationName:
+				for devKey, devVal in rawDeviceInfo.iteritems():
+					#If an IOS node is seen, get it's name and management IP
+					if ((devKey == 'NodeSubtype') and (devVal == 'IOSv')):
+						hostname = rawDeviceInfo['NodeName']
+						managementIP = rawDeviceInfo['managementIP']
+						ipDictionary[str(hostname)] = str(managementIP)
+					#If the virl-sim-server is found get information about it
+					if ((devKey == 'NodeName') and (devVal == 'virl-sim-server')):
+						serverManIP = rawDeviceInfo['managementIP']
+						serverExtIP = rawDeviceInfo['internalAddr']
+						SNATAddress = rawDeviceInfo['externalAddr']
+						consolePort = rawDeviceInfo['PortConsole']
+		#Call function to configure virl-sim-server
+		setupServer(serverManIP, serverExtIP, virlHost, consolePort, SNATAddress, ipDictionary)
+	except:
+		print 'VIRL server did not respond within timeout'
