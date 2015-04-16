@@ -74,7 +74,7 @@ if __name__ == "__main__":
 
 	#Makes a call to the VIRL host, creates a simulation and stores the returned data to a variable
 	try:
-		result = requests.post(url, auth=(username,password), params=payload, data=topology, headers=headers, timeout=5)
+		result = requests.post(url, auth=(username,password), params=payload, data=topology, headers=headers, timeout=10)
 		#The text of result is an ID for the simulation
 		simulationName = result.text
 		print 'Simulation ID is: ' + simulationName
