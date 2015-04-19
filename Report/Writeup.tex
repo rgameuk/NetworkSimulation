@@ -877,13 +877,36 @@ Once all devices and links have been added to the xml object the file is generat
 
 \section{Simulation}
 
-At this stage of the implementation an additional barrier to the design was introduced. The VIRL host that is used for all simulations is only contactable if the host machine is connected to the Loughborough University VPN. This added a requirement that the tool must be run on the Loughborough VPN. A second requirement was that the local host machine must have a shared interface so the Lab design in Section 5.1 could connect to the Internet. It is now understood that a security requirement on the Loughborough VPN dictates that any devices with a shared network interface is blocked from connecting, this created a conflict in the design.
+At this stage of the implementation an additional barrier to the design was introduced. The VIRL host that is used for all simulations is only contactable if the host machine is connected to the Loughborough University VPN. This added a requirement that the tool must be run on the VPN in order to be granted the appropriate access. A second requirement was that the local host machine must have a shared interface in order for the Lab design in Section 5.1 to connect to the Internet. It is now understood that a security requirement on the Loughborough VPN and Eduroam network dictates that any devices with a shared network interface is blocked from connecting, this created a conflict in the design.
 
-In order to overcome this issue, the design now uses two identical servers but with differing network connections in order to create a simulation. In this design the server on the lab network gathers and collates the information about the network, produces a virl file and then uploads this file to an intermediate SFTP server. Once this has been uploaded the lab is powered down and the same server is loaded, however this instance uses a traditional NAT connection to the internet. This allows it access to Loughborough University infrastructure and the internet. This server downloads the VIRL file from the SFTP server and pushes it to VIRL to create an emulation.
+In order to overcome this issue, the design now uses two identical servers with differing network connections in order to create a simulation. In this design the server on the lab network gathers and collates the information about the network, produces a virl file and then uploads this file to an intermediate SFTP server. Once this has been uploaded the lab is powered down and the same server is loaded, however this instance uses a traditional NAT connection to the internet. This allows it access to Loughborough University infrastructure and the internet. This server downloads the VIRL file from the SFTP server and pushes it to VIRL to create an emulation.
 
 The simulation aspect is handled in the file uploadTopology.py. This file connects to the Cisco VIRL REST API in order to create and retrieve information about simulations. The script begins by loading the virl file into a variable, it then creates a POST request to the API's `/simengine/rest/launch' rule. In this request it attaches the virl file and a defined naming scheme to be included in the simulation ID. The server then makes a GET request to the API's `/roster/rest/' rule, this returns information for every node on every simulation for the user that is authenticated. The script iterates over this information, for every IOSv need it sees for the simulation made it keeps a dictionary of the IP Address and hostname. When the function meets the `virl-sim-server' for the current simulation it saves information such as it's internal address, external address and the port number for which a user can access the server's console line.
 
-The information gathered about the IOSv hosts and the virl-sim-server are used in the function setupServer(). At this stage in the simulation the 
+\begin{lstlisting}[caption=Extract of /roster/rest information]
+
+"rob.My_Topologies@topology-gymofc.virl.~lxc-flat.External Address": {
+"Annotation": "131.231.97.151",
+"SimulationHost": "158.125.102.75",
+"managementIP": "131.231.97.151",
+"simExpires": null,
+"simID": "My_Topologies@topology-gymofc",
+"simLaunch": "2015-01-06T16:06:59.534563",
+"simStatus": "ACTIVE"
+},
+"rob.My_Topologies@topology-gymofc.virl.~lxc-flat.External Port": {
+"Annotation": "59313",
+"SimulationHost": "158.125.102.75",
+"managementIP": "59313",
+"simExpires": null,
+"simID": "My_Topologies@topology-gymofc",
+"simLaunch": "2015-01-06T16:06:59.534563",
+"simStatus": "ACTIVE"
+},
+
+\end{lstlisting}
+
+The information gathered about the IOSv hosts and the virl-sim-server are used in the function setupServer(). At this stage in the simulation the server does not have a valid network configuration. This function uses a telnet library, telnetlib \citep{telnetlib}. Telnet was used for this section of development as the only internet-facing access into virl-sim-server is a console port provided on VIRL. The function telnets into this console port, gaining access to the console line. The tool then configures the eth1 IP address to match the internal SNAT address that was received earlier in the function. At this point the server has a valid IP address and can communicate with the outside world, however it does not have a default gateway so cannot respond to traffic. The function adds this default gateway to the server's routing table. The server can now contact with the outside world, the tool returns the IP address of the public-facing interface and the user can SSH into the virl-sim-server, using it as a jumphost into the simulation.
 
 \begin{figure}[h!]
 	\caption{Management Network Design}
@@ -891,38 +914,11 @@ The information gathered about the IOSv hosts and the virl-sim-server are used i
 	\includegraphics[width=0.7\textwidth]{managementNet.png}
 \end{figure}
 
+Figure 5.3 shows a simplified view of the network produce in VIRL. In this diagram the emulated routers are represented by the router icons and `real-world' cables are represented by black links. In addition to these links the emulation also has a management network, denoted by the yellow links, which interconnects every device on the network. For simplicity, Figure 5.3 only shows the management connections through to the virl-sim-server, this network operates on the 10.255.0.0/24 subnet. All IOSv on the topology connect via the GigabitEthernet0/0 interface created in Section 5.3. This connectivity will be used to allow the virl-sim-server to connect and gather information from the IOSv devices on the topology.
 
+\section{Interaction}
 
-Simulations within VIRL will be created using a setting on the simulation engine known as a 'Private Simulation Network'. This option creates a management network on the simulation which allows access to the management ports of the Routers on the topology. In addition to this it also provides a Linux container (LXC) on the network on this management network. One issue that arises from keeping this tool separate from VM Maestro is that the ip addressing schema produced by VIRL for these hosts is only viewable from the GUI. I have identified that this information is available be sending an authenticated REST request to the API running on the VIRL server, the response to this will provide information regarding the simulation details. A particular detail of note is information relating to this LXC host is its ip address (Which is defined by VIRL and is allocated per simulation) or a unique port number to connect on via the VIRL server ip. This allows access from outside of the VIRL simulation. The below output from an API call details this information:
-
-\begin{lstlisting}
-
-"rob.My_Topologies@topology-gymofc.virl.~lxc-flat.External Address": {
-    "Annotation": "131.231.97.151",
-    "SimulationHost": "158.125.102.75",
-    "managementIP": "131.231.97.151",
-    "simExpires": null,
-    "simID": "My_Topologies@topology-gymofc",
-    "simLaunch": "2015-01-06T16:06:59.534563",
-    "simStatus": "ACTIVE"
-  },
-  "rob.My_Topologies@topology-gymofc.virl.~lxc-flat.External Port": {
-    "Annotation": "59313",
-    "SimulationHost": "158.125.102.75",
-    "managementIP": "59313",
-    "simExpires": null,
-    "simID": "My_Topologies@topology-gymofc",
-    "simLaunch": "2015-01-06T16:06:59.534563",
-    "simStatus": "ACTIVE"
-  },
-
-\end{lstlisting}
-
-The above can provide flexibility to the way the system connects to VIRL. There are two methods of connection using the LXC host, the first is to use the ip address assigned to the host, this information is provided in the "External Address" section. However this address can be dynamically assigned by the VIRL server and could be any address on the 131.231.97.128/25 network. A second method is to use the "External Port" section above, instead of using the ip address assigned to the LXC host this instead uses the primary ip address of the VIRL server (158.125.102.75). The creation of the simulation informs the server to begin listening on this port, any connections to the server on this port will automatically be passed through to the LXC host. Due to this, I have opted to add a call to the API in order to check which ip address has been assigned. If this were not the case then only one simulation could be made at any given time, this would be achieved by defining which port was used for access through the VIRL Server ip.
-
-\section{Network Monitoring}
-
-\textit{To do: Investigate whether current Open Source solutions such as Cacti or MRTG will provide the output require or whether a new solution would be added as part of this project}
+The produced tool allows a Network Engineer to SSH to the virl-sim-server, from here the user can interact with the emulation through a traditional method, telnet. This provides unrestricted access to the device's VTY lines from which an engineer can implement any changes to the network, gathering feedback via methods such as viewing routing tables or looking at traceroutes through the network. In addition to the VTY access an engineer can also deploy other tools on to the virl-sim-server which can connect to the emulated routers. Examples of these tools are outlined in the following subsections.
 
 \subsection{SNMP Monitoring}
 
@@ -937,7 +933,8 @@ Cisco Flexible Netflow is supported by Cisco IOSv and gives a more detailed view
 All interfaces within VIRL have a defined 'tap' interface on the VIRL Server, this can be used for packet captures. Using a packet capture in addition to the Netflow and SNMP will allow the tool to inspect the traffic at a much more granular level. One use case of this would be the testing of a routing change on an established session and how an application can deal with this.
 
 \textit{Note: Access to these tap interfaces may require access to the VIRL server in the admin role}
- 
+
+Although this adds value to the tool produced, it unfortunately does not meet the full requirements outlined in the  
 
 \chapter{Testing}
 
