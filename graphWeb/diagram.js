@@ -1,6 +1,6 @@
 var width = 1200;
 var height = 800;
-var radius = 20;
+var radius = 10;
 
 var force = d3.layout.force()   //Defines the elements of forces in the simulation, charges ensure that nodes (routers) do not overlap
     .charge(-2000)   //charge defines how nodes interact with one another, negative charges causes repulsion
@@ -56,7 +56,7 @@ d3.json("topology.json", function(json) {
             div.transition()    //transition for the hover-over        
                 .duration(10) //short duration to improve responsibility     
                 .style("opacity", .9);      
-            div .html(d.srcRouter + ' Interface: <b>' + d.srcPort + "</b><br/>" + d.dstRouter + ' Interface: <b>' + d.dstPort + '</b>')  //Displays the interface information for the links
+            div .html(d.srcRouter + ' Interface: <b><br>' + d.srcPort + "</b><br><br/>" + d.dstRouter + ' Interface: <b>' + d.dstPort + '</b>')  //Displays the interface information for the links
                 .style("left", (d3.event.pageX) + "px")     //sets the location of the div for the tooltip
                 .style("top", (d3.event.pageY - 28) + "px");    
             })                  
@@ -84,7 +84,7 @@ d3.json("topology.json", function(json) {
                         return d3.svg.symbolTypes[3]; 
                     } 
                 })
-                .size(2056)
+                .size(1150)
             )
             .style("fill", "steelblue")
             .call(node_drag);

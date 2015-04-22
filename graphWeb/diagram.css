@@ -27,10 +27,10 @@ svg *::-webkit-selection {
 div.tooltip {   
     position: absolute;         
     text-align: center;         
-    width: 350px;                    
+    width: 250px;                    
     height: 100px;                   
     padding: 2px;               
-    font: 20px sans-serif;      
+    font: 16px sans-serif;      
     background: lightsteelblue; 
     border: 0px;        
     border-radius: 8px;         
