@@ -918,23 +918,59 @@ Figure 5.3 shows a simplified view of the network produce in VIRL. In this diagr
 
 \section{Interaction}
 
-The produced tool allows a Network Engineer to SSH to the virl-sim-server, from here the user can interact with the emulation through a traditional method, telnet. This provides unrestricted access to the device's VTY lines from which an engineer can implement any changes to the network, gathering feedback via methods such as viewing routing tables or looking at traceroutes through the network. In addition to the VTY access an engineer can also deploy other tools on to the virl-sim-server which can connect to the emulated routers. Examples of these tools are outlined in the following subsections.
+The produced tool allows a Network Engineer to SSH to the virl-sim-server, from here the user can interact with the emulation through a traditional method, telnet. This provides unrestricted access to the device's VTY lines from which an engineer can implement any changes to the network, gathering feedback via methods such as viewing routing tables or using traceroutes through the network. In addition to the VTY access an engineer can also deploy other tools on to the virl-sim-server which can connect to the emulated routers. Examples of these tools are outlined in the following subsections.
 
 \subsection{SNMP Monitoring}
 
-IOSv instances, the focus of this tool support SNMP just as a physical router would. Using this access I can set up an SNMP Monitor on a server within the simulation which could provide detailed statistics such as interface counters. Using this information the system can determine at a high-level where traffic is flowing.
+IOSv instances support SNMP just as a physical router would. Using this access the Engineer can set up an SNMP Monitor on a server within the simulation which could provide detailed statistics such as interface counters. In addition to this, the IOSv instances can utilise SNMP traps in order to be notified of any significant changes on the network.
 
 \subsection{Netflow}
 
-Cisco Flexible Netflow is supported by Cisco IOSv and gives a more detailed view of traffic across router interfaces. Configuring each IOSv instance as a Flow Exporter and adding an collector such as Cacti will provide a detailed breakdown of traffic based on its Layer 3 and 4 information. This adds further granularity to the testing evidence that is created.
+Netflow is supported by Cisco IOSv and gives a more detailed view of traffic across router interfaces. Configuring each IOSv instance as a Flow Exporter and adding a collector such as Cacti will provide a detailed breakdown of traffic based on its Layer 3 and 4 information. This adds further granularity to the testing evidence that is created and allows an Engineer to understand how traffic is reacting to the changes made on the network.
 
 \subsection{Packet Capture}
 
-All interfaces within VIRL have a defined 'tap' interface on the VIRL Server, this can be used for packet captures. Using a packet capture in addition to the Netflow and SNMP will allow the tool to inspect the traffic at a much more granular level. One use case of this would be the testing of a routing change on an established session and how an application can deal with this.
+Using a Cisco SPAN session an Engineer can configure an IOSv device to mirror the traffic seen on one interface to another defined interface. This mirroring can be used for analysis by an Engineer in order to understand the impact of a change to the network at a packet-level. An example could be examining the impact of an interface being taken down on a TCP session, looking at the packet information will enable to see the exact time that any impact to traffic was made, along with the impact on the session. 
 
-\textit{Note: Access to these tap interfaces may require access to the VIRL server in the admin role}
+\subsection{Additional Interaction}
 
-Although this adds value to the tool produced, it unfortunately does not meet the full requirements outlined in the  
+Although the technologies outlined so far in this section add value to the tool produced, it unfortunately does not meet the full requirements outlined in Section 4.6. In this section there are requirements regarding investigation of new methods of interaction with a network emulation. Initial designs of this section were to include a webserver installed and dynamically configured on virl-sim-server which would host a page containing a further tool which allows the user to interact with the emulation through a web interface.
+
+The visual aspect of this section of the tool is implemented using a javascript library called d3.js \citep{d3}. This library implements a data-driven implementation of visual components using html5 SVG elements. D3.js interprets the json representation of the topology used in Section 5.2 to create a visual representation of the network. The topology is created using a model known as a Force-directed graph, a model based on nodes and edges, which this tool replaces with devices and interconnecting cables. This graph uses a physics simulation on the back-end in order to display the graph in a meaningful format. As the Discovery section of this tool only discovers the devices and links, it does not have any information regarding the physical positioning of devices on a topology view. The tool uses the physics simulation in order to create a view which does not have any overlapping nodes or edges and allows a viewer to understand the layout of a network at a glance. The force-directed graph was used as it is a tried and tested method for node-and-edge display and allows a quick rendering of the topology when compared to a standalone tool for graphing tool. In addition to this, running this section of the tool on a webserver allows the User to view the topology discovered at any given time by viewing the webpage. This enables the user to check that the discovery process has found the information the required, before creating an emulation session.
+
+\begin{figure}[h!]
+	\caption{Web Topology View}
+	\centering
+	\includegraphics[width=0.8\textwidth]{topologyWeb.png}
+\end{figure}
+
+Figure 5.4 shows the topology view of this webserver. When first displayed the Force-directed graph moves to find equilibrium, the forces of each node moving until the charges cancel one-another out and any movement stops. At this point the simulation is stopped and the topology view is fixed, not moving unless the user interacts with the topology. Nodes can be dragged around the canvas in order to create the desired layout.
+
+\begin{figure}[!]
+	\caption{Web Topology View Tooltip}
+	\centering
+	\includegraphics[width=0.8\textwidth]{topologyWebHover.png}
+\end{figure}
+
+In addition to the view created from the information from json, additional information about the hosts in the simulation is stored in the DOM section of the SVG elements on the screen. This information can be used to identify IP addressing, node types and interfaces. This information is also encoded in to the links on the screen, each one holding a source device, source interface, destination device and destination interface. This information is displayed in a tool-tip on links in order to understand interface names on the topology in order to compare to the real devices when implementing changes.
+
+\begin{figure}[!]
+	\caption{Web Topology View DOM Elements}
+	\centering
+	\includegraphics[width=0.4\textwidth]{topologyWebDOM.png}
+\end{figure}
+
+Further information is stored under the elements in the topology, information such as the IP address of a link allows information such as `Next hop' IP addresses to be used in order to display routing paths on the topology. Uses for this information will be outlined in Section 5.6.5
+
+
+
+\subsection{Future Work}
+
+Due to an issue arising on the Loughborough University firewall further work on this section of the webserver portion of the tool was halted. It was identified that Port 80 and 443 were not permitted to the 131.231.99.0/24 network, the range used for SNAT network connections. It was not possible to have this access permitted in order to produce a working prototype of this section. Further restraints were also prevalent, such as the ability to interact with devices using Cisco OnePK in order to gather information from emulated hosts. This tool-set was not available in the IOS versions that were used in development of the tool and interaction could only occur on the IOSv emulated hosts.
+
+Due to the reasons outlined above, rather than outlining the implementation of this part of the tool it will instead outline the design of this functionality.
+
+The design of this section was based around the implementation of a webserver and Python API on virl-sim-server. The combination of these two tools provide a webservice, available on the public SNAT IP Address that the User can connect to in order to interact with the emulation.
 
 \chapter{Testing}
 
