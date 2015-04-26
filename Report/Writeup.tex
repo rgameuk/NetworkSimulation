@@ -82,7 +82,7 @@
 \setlength{\textwidth}{6.25in}
 \graphicspath{images/}
 \begin{document}
-\title{An Investigation into Network Emulation as a Testing Platform}
+\title{Network Emulation as a Testing Platform}
 \author{Robert Game}
 \date{}
 \maketitle
@@ -2297,11 +2297,77 @@ Neighbor        V           AS MsgRcvd MsgSent   TblVer  InQ OutQ Up/Down  State
 14.4.4.4        4         6000      44      44       23    0    0 00:35:17        9
 \end{lstlisting}
 
-\chapter{User Guide}
+\chapter{Installation and User Guide}
 
 \section{Prerequisites}
 
-This tool was intended to be provided as a one server solution which would connect to and cre
+\subsection{Connectivity}
+This tool was intended to be provided as a one server solution which would connect to and create an emulation of a local network. If used with real hardware the server used need only be connected to the Loughborough University VPN. Additional servers were used in the Implementation section of this report due to the VPN rejecting connections with a shared interface.
+
+\subsection{Server Type}
+This tool will only run using an Ubuntu distribution, it can be used on a server version however the webserver topology view will be inaccessible. For development the tool was run on an Ubuntu 14.04 LTS desktop image.
+
+\subsection{Server Packages}
+The tool requires the installation of the following packages:
+
+\begin{itemize}
+	\item{CDPR - Cisco Discovery Protocol Reporter}
+	\item{snmpwalk - used for snmp calls. Installed under the snmp-utils package}
+	\item{Cisco MIBs - standard Cisco Management Information Base}
+	\item{Pickle - Install using the pip package manager}
+	\item{Pysftp - Python sftp client for connecting to SFTP servers}
+	\item{ipaddr - Install using pip package manager}
+	\item{ciscoconfparse - Install using pip package manager}
+	\item{lxml - Install using pip package manager}
+	\item{RANCID - Install using aptitude. NOTE - Issuem was found with cloginrc file being used in wrong location, if this occurs add a symbolic link to the location it is looking in}
+	\item{Nginx or Apache - a symlink to topology.json in the html directory will provide access for topology view. All files inside graphWeb need to be moved to the html directory}
+\end{itemize}
+
+In addition to the packages above the user running to tool must have superuser access.
+
+\section{Tool usage}
+
+The tool is a set of scripts that need to be run sequentially in order for the correct output to be given. The scripts and files are defined in the following subsections. For networkDiscovery through to virlCreation the tool should not be connected to the VPN as it requires access to local IP addresses, for the script uploadTopology the server must be connected to the VPN. Changes to the scripts may be necessary in order to stop them from attempting to upload files to the intermediary SFTP server.
+
+The function networkEmulator.py provides a wrapper for the scripts networkDiscovery through to virlCreation, at this point the tool requires a change on the network connection of the server it is running on. Once the server is connected to the Loughborough VPN the user can use uploadTopology.py to create the emulation.
+
+An extended description of each function is below:
+
+\subsection{networkDiscovery.py}
+
+This script is used for network discovery and the creation of the topology, routerDictionary and intChanges objects. It requires superuser access to run as CDPR requires root in order to look at network traffic on the eth0 interface. The output of the script tells the user which routers were discovered, the link mappings to Gigabit interfaces and which cdp entries were removed in order to add a switch.
+
+In addition to the standard running, the tool may also to the argument `--specify' which allows the user to specify the network ranges of the devices they want to discover.
+
+\subsection{networkLoad.py}
+
+An alternative script to networkDiscovery, this script is used when the user wishes to create an emulation from a known network. Running this script assumes that a correct JSON file for the topology is in the `python-scripts' directory, it also assumes that the corresponding network configuration files are stored in the `config-files' directory.
+
+This script extracts the topology information from the JSON file, creating a topology, routerDictionary and intChanges object for the information stored. It then saves this information to file for use in later scripts.
+
+\subsection{rancidSetup.py}
+
+This script is only used when the networkDiscovery script is used, it uses the installed rancid configuration repository to extract router configurations from devices. The script removes any underlying configuration for the `Discovered' group inside of rancid before attempting extraction.
+
+Note: Script must be run as root as it needs to be able to run scripts as rancid user
+
+\subsection{configFormatter.py}
+
+On a standard run this script copies files from the `Discovered' group inside of Rancid into the local `config-files' directory. It then uses ciscoconfparse to edit the configuration files, producing the `.edited' versions which are used to produce the VIRL file.
+
+If this script is run with the argument --noCopy the configurations stored in the `config-files' are used instead of copying files from Rancid.
+
+This script will fail if an invalid config file is used or if any are missing.
+
+\subsection{virlCreation.py}
+
+This script uses deviceTopology in order to create the nodes inside the virl file, it also loads the corresponding `.edited' file for the current router before adding the interconnecting links for devices. Once the routers and links are added the server and SNAT object are added. When the script closes a topology.virl file is added to the local directory.
+
+\subsection{uploadTopology.py}
+
+REQUIRES VPN
+
+This script uses the produced topology.virl file to create an emulation using the VIRL REST API. The script first creates the emulation and saves the name of the simulation. It then waits for the VIRL engine to become available (This is subject to timeouts depending on server load). Once the information is gathered the script uses the console port for virl-sim-server to configure the internet-facing interface for SSH access. The tool then returns the external IP address that a user can SSH to in order to access the simulation.
 
 \end{appendices}
 
