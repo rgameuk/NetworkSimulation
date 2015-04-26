@@ -16,6 +16,7 @@
 \usepackage[toc,page]{appendix}
 \usepackage{placeins}
 
+
 \definecolor{Code}{rgb}{0,0,0}
 \definecolor{Decorators}{rgb}{0.5,0.5,0.5}
 \definecolor{Numbers}{rgb}{0.5,0,0}
@@ -75,6 +76,7 @@
   breakatwhitespace=true,
   tabsize=3
 }
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
 \usepackage{fancyhdr}
 \setlength{\topmargin}{-.5in}
 \setlength{\textheight}{9in}
@@ -82,10 +84,51 @@
 \setlength{\textwidth}{6.25in}
 \graphicspath{images/}
 \begin{document}
-\title{Network Emulation as a Testing Platform}
-\author{Robert Game}
-\date{}
-\maketitle
+%\title{Network Emulation as a Testing Platform}
+%\author{Robert Game}
+%\date{}
+%\maketitle
+
+\begin{titlepage}
+	\begin{center}
+		\includegraphics[width=0.5\textwidth]{lufbra.pdf}~\\[1cm]
+
+		\textsc{\Large Final year project}\\[1.5cm]
+		% Title
+		\HRule \\[0.4cm]
+		{ \huge \bfseries Network Emulation as a Testing Platform \\[0.4cm] }
+		
+		\HRule \\[1.5cm]
+		
+		% Author and supervisor
+		\noindent
+		\begin{minipage}[t]{0.4\textwidth}
+			\begin{flushleft} \large
+				\emph{Author:}\\
+				Robert \textsc{Game}\\
+				Computer Science \\
+				B128500
+			\end{flushleft}
+		\end{minipage}%
+		\begin{minipage}[t]{0.4\textwidth}
+			\begin{flushright} \large
+				\emph{Supervisor:} \\
+				Dr.~Iain \textsc{Phillips}
+			\end{flushright}
+		\end{minipage}
+		
+		\vfill
+		
+		% Bottom of the page
+		{\large May/June 2015}
+	\end{center}
+\end{titlepage}
+
+\pagenumbering{Roman}
+
+\chapter*{Acknowledgements}
+
+I would first like to thank Dr Iain Phillips for his knowledge and teachings throughout the duration of this project. In addition to this I would like to thank Iain for providing access to the Cisco VIRL server at Loughborough, without which this project could never have gone forward. Secondly I would like to thank my friends and family for their support, both technical and moral throughout the project, especially my girlfriend Sam who has backed me throughout it all. Finally, I would also like to thank the Network Operations team at Nomura for giving me a chance in the Networks world helping me find the career path that I am now heading towards.  
 
 \chapter*{Abstract}
 
@@ -95,8 +138,9 @@ In recent years technology for large enterprise has advanced significantly due t
 
 \tableofcontents
 
-\chapter{Introduction}
 
+\chapter{Introduction}
+\pagenumbering{arabic} 
 In recent years the use of a second, entirely separate infrastructure has been used to develop tools, test changes and simulate outages of IT Systems. In a large scale infrastructure these environments are usually created for testing changes on Server or Application environments, however the need for real traffic and the cost of dedicated hardware makes this difficult in the Network Infrastructure. The use of a physical lab takes time to set up and teams usually do not use them unless they are planning for large scale infrastructure changes.
 
 This project will aim to create a tool intended for use in a Network Operations team in large scale enterprise. This tool will aim to pull together different aspects of Network Management tools and use information available to create a network model inside of the Cisco VIRL emulated environment. Using this model a Network Operations team can test environment changes on a model of their own network. Using data gathered from this simulation and the changes observed during any configuration edits the tool will then aim to create a piece of testing evidence which can be used to support any Change Management required on the infrastructure.
@@ -982,7 +1026,7 @@ The tool would also use the Cisco OnePK \citep{OnePK} platform to programmatical
 
 A RESTful API works on a collection of paths in the URL known as routes, these routes defined both the behaviour required by the call and the objects to perform that behaviour on. The design would use the an emulation at it's root in the URL, allowing calls to be made for data retrieval or data addition on the emulation. Some examples of this behaviour is defined in Figure 5.7.
 
-
+\FloatBarrier
 \begin{figure}[h!]
 	\caption{Example REST Routes}
 	\centering
@@ -1004,6 +1048,7 @@ A RESTful API works on a collection of paths in the URL known as routes, these r
 		\hline
 	\end{tabular}
 \end{figure}
+\FloatBarrier
  
 The routes defined in Figure 5.7 will execute server-side python scripts that will use OnePK to interact with emulated devices and either return the requested information or update the emulated devices by using the information specified in the payload of the request. As an example, if the tool sent the request /api/traceroute with the payload \textit{from: R1, to: R7} the tool would execute a OnePK script that would extract this traceroute information from R1, returning a list of the hops made on it's routed path. This list can be processed by the webserver, which can indicate the routing path by colouring the corresponding links on the topology to indicate their involvement.
 
@@ -1250,7 +1295,7 @@ From the testing it is clear that the tool effectively produces an emulated vers
 
 The aim of this project was to provide an investigation into the potential uses of Network Emulation as a testing platform for medium to large enterprise. On the whole the tool produced enables an Engineer of such organisation to choose an area of their network to emulate, the tool pushes this from the discovery phase through to giving the user a jumphost in order to interact with their emulation. This is the method used to implement changes on any Cisco IOS device in large enterprise and would provide an Engineer with all the tools needed to implement a change. In addition to this CLI access to the IOSv devices, the tool also produces a jumphost into the management network of the emulation. Using this network an Engineer can make use of further network management tools to provide an in-depth view of the network through technologies such as Netflow, SNMP or Software Defined Networking.
 
-Later parts of the Design phase included the implementation of a system which would provide a new type of interaction with an emulated network. Taking form as a webserver on the virl host it would allow the user to interact with the emulation through interaction with elements such as routers and links, these interactions would produce visual feedback to the user about the impact. This could be in the form of coloured links indicating current traffic volumes or routing decisions. Unfortunately due to the technical problems defined in Section 5.6.5 and restrictions on time this implementation was not possible and the project was de-scoped.
+Later parts of the Design phase included the implementation of a system which would provide a new type of interaction with an emulated network. Taking form as a webserver on the virl host it would allow the user to interact with the emulation through interaction with elements such as routers and links, these interactions would produce visual feedback to the user about the impact. This could be in the form of coloured links indicating current traffic volumes or routing decisions. Unfortunately due to the technical problems defined in Section 5.6.5 and restrictions on time this implementation was not possible and the project was de-scoped. 
 
 \section{Difficulties Encountered}
 
