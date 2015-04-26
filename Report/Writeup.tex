@@ -14,6 +14,7 @@
 \usepackage{listings}
 \usepackage{setspace}
 \usepackage[toc,page]{appendix}
+\usepackage{placeins}
 
 \definecolor{Code}{rgb}{0,0,0}
 \definecolor{Decorators}{rgb}{0.5,0.5,0.5}
@@ -962,25 +963,119 @@ In addition to the view created from the information from json, additional infor
 
 Further information is stored under the elements in the topology, information such as the IP address of a link allows information such as `Next hop' IP addresses to be used in order to display routing paths on the topology. Uses for this information will be outlined in Section 5.6.5
 
-
-
-\subsection{Future Work}
+\subsection{Webserver Design}
 
 Due to an issue arising on the Loughborough University firewall further work on this section of the webserver portion of the tool was halted. It was identified that Port 80 and 443 were not permitted to the 131.231.99.0/24 network, the range used for SNAT network connections. It was not possible to have this access permitted in order to produce a working prototype of this section. Further restraints were also prevalent, such as the ability to interact with devices using Cisco OnePK in order to gather information from emulated hosts. This tool-set was not available in the IOS versions that were used in development of the tool and interaction could only occur on the IOSv emulated hosts.
 
 Due to the reasons outlined above, rather than outlining the implementation of this part of the tool it will instead outline the design of this functionality.
 
-The design of this section was based around the implementation of a webserver and Python API on virl-sim-server. The combination of these two tools provide a webservice, available on the public SNAT IP Address that the User can connect to in order to interact with the emulation.
+The design of this section was based around the implementation of a webserver and Python API on virl-sim-server. The combination of these two tools provide a webservice, available on the public SNAT IP Address that the User can connect to in order to interact with the emulation. On the front-end this webserver would host the same topology view which was outlined in Section 5.6.4, however it would have additional functionality provided through the API and Cisco OnePK.
+
+One feature of this tool would be the visualisation of routing through the links on the topology, this would be implemented by changing the colour of the links used in a forwarding path in order to display to the user which decisions were made by each router. This information would be updated constantly, providing a view of the current state of routing between two locations. In particular this would allow an Engineer to see how a change within the topology will affect routing between two locations. Allowing them to better understand the full impact of their changes and whether any latency or impact to users will be involved.
+
+The REST API used for this section of the tool would be implemented using a python-based Web API such as Bottle \citep{Bottle} or Flask \citep{Flask}. These tools enable the interaction of web-based languages such as Javascript with traditional server based ones such as Python. This allows the webserver portion of the tool to interact with python, and thus any python based code on the server. Creating a library of resources using this API will enable the webserver to interact directly with the emulation on VIRL. Allowing the user to interact with an emulation without connecting to a device via a console session.
+
+The tool would also use the Cisco OnePK \citep{OnePK} platform to programmatically extract information from emulated hosts such as the hosts currently in the emulation, their power status, link status and bandwidth on links. The use of the OnePK Software Development Toolkit enables a more dynamic method of extracting information, it removes the need for extraction of required details from SNMP calls and also creates a more streamlined model of interaction when compared to traditional `screen-scraping' tools which rely on telnet or ssh to gather information. Using OnePK allows the tool to poll any emulated device for the required information.
+
+A RESTful API works on a collection of paths in the URL known as routes, these routes defined both the behaviour required by the call and the objects to perform that behaviour on. The design would use the an emulation at it's root in the URL, allowing calls to be made for data retrieval or data addition on the emulation. Some examples of this behaviour is defined in Figure 5.7.
+
+
+\begin{figure}[h!]
+	\caption{Example REST Routes}
+	\centering
+	\begin{tabular}{|p{1.5cm}|p{4cm}|p{5cm}|p{3.5cm}|}
+		\hline \textbf{HTTP Method} & \textbf{Action} & \textbf{Example URI} & \textbf{Payload} \\ 
+		\hline GET & Get a list of all devices on Emulation & /api/topology & null \\ 
+		\hline GET & Get device information by ID & /api/topology/1 & null \\ 
+		\hline GET & Get a traceroute list of hops from X to Y & /api/traceroute & from: X 
+		\newline
+		to: Y \\ 
+		\hline GET & Get forwarding table from device & /api/forwarding/1 & null  \\ 
+		\hline POST & Create a new device on the topology & /api/topology/1 & hostname: x 
+		\newline
+		IP Address: X.X.X.X 
+		\newline
+		Interfaces: \{Gi0/1, Gi0/2\} \\ 
+		\hline PUT & Update hostname of a  device on the topology (by ID) & /api/topology/1 & hostname: x \\ 
+		\hline PUT & Update link status of a  device on the topology (by ID) & /api/topology/1/interface/1 & status: DOWN  \\ 
+		\hline
+	\end{tabular}
+\end{figure}
+ 
+The routes defined in Figure 5.7 will execute server-side python scripts that will use OnePK to interact with emulated devices and either return the requested information or update the emulated devices by using the information specified in the payload of the request. As an example, if the tool sent the request /api/traceroute with the payload \textit{from: R1, to: R7} the tool would execute a OnePK script that would extract this traceroute information from R1, returning a list of the hops made on it's routed path. This list can be processed by the webserver, which can indicate the routing path by colouring the corresponding links on the topology to indicate their involvement.
 
 \chapter{Testing}
 
-To support the development of this project I have created a set of network topologies with complex configurations. These are a representation of a network which a user may wish to simulate and can demonstrate added complexities which may be encountered in a real-world networks. In addition to this, they provide an already established routing platform which can be used for testing network changes. As described in the previous section "Equipment Used" these topologies have been created inside of GNS3.
+For the produced tool testing has been done in two distinct methods. The first round of testing will focus on the code used in this tool, particularly error handling and parsing of incorrect files. The second round will focus on the created emulations, as the tool is focused on creating a counterpart to a real network, the testing will focus on ensuring that created emulations exhibit the same behaviour as real topologies. This will be performed by using multiple topologies running separate routing protocols in order to create variety in the test cases. The correctness of produced emulations can be compared using the visual topologies, routing tables and neighbour tables.
+
+\section{General Testing}
+
+The tests defined in Figure 6.1 define a set of tests that are general, the network being used for discover will have no affect on these tests and the outcomes will be standard across all inputs.
+
+\FloatBarrier
+\begin{figure}[h!]
+	\caption{General Test Results}
+	\centering
+	\begin{tabular}{|p{0.6cm}|p{3.0cm}|p{3cm}|p{3.5cm}|p{3.5cm}|}
+		\hline \textbf{Test No.} & \textbf{Target File} & \textbf{Purpose of Test} & \textbf{Expected Result} & \textbf{Actual Result} \\ 
+		\hline 1 & networkDiscovery & Check that CDP is recognised & CDP Packet of local device is seen and a topology device is created &  CDP Packet seen and device created  \\ 
+		\hline 2 & networkDiscovery & Check SNMP can communicate &  SNMP communicates with Device & SNMP call returns all CDP hostnames   \\ 
+		\hline 3 & networkDiscovery & Check that discovery finds all devices & Recursive function will find all devices in search space &  All devices on topology are discovered and have corresponding device objects  \\ 
+		\hline 4 & networkDiscovery & Check that all interfaces are mapped correctly & The number of interfaces used on the hardware match the number of interfaces in a device objects cdp\_entries  &  Numbers match as expected  \\ 
+		\hline 5 & networkDiscovery & Check JSON output is correct & JSON file created is accepted by the webserver and displayed &  As expected,   \\ 
+		\hline 6 & networkDiscovery & Check that unresponsive devices are dealt with correctly & SNMP call will timeout, tool will remove all reference to device from topology & As expected, device is omitted from topology. Message is displayed on Command Line  \\ 
+		\hline 7 & networkDiscovery &  Check that script times out if nothing found & Script will time out after 61 seconds &  As expected, time out after 61 seconds if no CDP is seen   \\ 
+		\hline 8 & networkDiscovery & IP Address input works as expected & Only devices within the specified IP Address ranges are added to the topology & As expected, in testing case only R1, R2 and R3 were added to topology when 172.30.0.0/24 was specified on the OSPF topology    \\ 
+		\hline 9 & networkDiscovery & Check that switches are correctly added & A switch is created and added in any location where a device can see two other devices on one link &  As expected, two switches were created in the entire OSPF topology   \\ 
+		\hline 10 & networkDiscovery & User specifies network which is not local & networkDiscovery fails and user is informed &  As expected   \\ 
+		\hline 
+	\end{tabular} 
+\end{figure}
+\FloatBarrier
+
+\begin{tabular}{|p{0.6cm}|p{3.0cm}|p{3cm}|p{3.5cm}|p{3.5cm}|}
+	\hline \textbf{Test No.} & \textbf{Target File} & \textbf{Purpose of Test} & \textbf{Expected Result} & \textbf{Actual Result} \\ 
+	\hline 11 & networkDiscovery & Switches are correctly identified and created & Where two devices are seen on a single interface, a switch is made & As expected  \\ 
+	\hline 12 & rancidSetup & Check script is run as root & If script is not run as root and IOException is thrown, this will be handled & Exception handled and user notified    \\ 
+	\hline 13 & rancidSetup & Device does not respond to rancid & User is not notified - limitation of using rancid & As expected, user is not notified  \\ 
+	\hline 14 & configFormatter & User specifies the --noCopy parameter & Script uses the files already in config\-files & As expected  \\ 
+	\hline 15 & configFormatter & Config file is missing from location & User is notified and script is halted & As expected, user is notified  \\
+	\hline 16 & configFormatter & Interface settings are not deleted in formatting & A Gigabit interface which represents a serial interface will have the bandwidth of a serial connection set & As expected, by default this is set to 2000 if not specified  \\
+	\hline 17 & configFormatter & Management interface is added in correct location & The management interface, GigabitEthernet0/0 is added before the first interface on the device & As expected  \\
+	\hline 18 & configFormatter & Login information is stripped from device & All usernames and passwords are removed, `no login' added to vty lines & As expected  \\
+	\hline 19 & configFormatter & Invalid configuration files are rejected & Adding a non-cisco configuration file throws an exception when passing with ciscoconfparse. This is handled and processing is stopped & As expected  \\
+	\hline 20 & virlCreation & Check tool produces a valid VIRL file & Tool creates a .virl file which is created from xml & Valid xml is created  \\
+	\hline
+\end{tabular}
+
+\begin{tabular}{|p{0.6cm}|p{3.0cm}|p{3cm}|p{3.5cm}|p{3.5cm}|}
+	\hline \textbf{Test No.} & \textbf{Target File} & \textbf{Purpose of Test} & \textbf{Expected Result} & \textbf{Actual Result} \\ 
+	\hline 21 & virlCreation & Routers and their links are reproduced correctly in VIRL & An IOSv node is created for every router device, each link is specified only once & As expected, the topology is correctly represented  \\ 
+	\hline 22 & virlCreation & Check switches are correctly added as LAN segments & Switches are represented as SEGMENT devices and links are produced to connect them to Routers & Switches added as expected    \\ 
+	\hline 23 & virlCreation & Tool adds the virl-sim-server and correctly connects it to the topology & virl-sim-server is added to topology, connection to topology is provided through eth0 to Private Simulation Network. Connection to internet is through eth1 which connects to SNAT & As expected, server is added and connections are correct \\ 
+	\hline 24 & virlCreation & Check SNAT device is correctly added & SNAT device is added and link is connected to virl-sim-server eth1 interface & Created and added as expected   \\ 
+	\hline 25 & uploadTopology & Check tool copes with server being unavailable & Connection will timeout after 5 seconds & Timeout was hit - server was not connected to VPN and therefore could not contact VIRL   \\
+	\hline 26 & uploadTopology & Check script retrieves emulation information & Tool makes call to /roster/rest/ on API and extracts information from returned JSON & Call was made successfully and information was retrieved   \\
+	\hline 27 & uploadTopology & Check script can telnet to virl-sim-server and configure it & Tool telnets to virl-sim-server configuring it's interfaces, default gateway and host information & Updates were made successfully \\
+	\hline 28 & uploadTopology & Check server is available on the public SNAT address & Server can be accessed using default username and password & Logged into server successfully \\
+	\hline
+\end{tabular}
+
+\begin{tabular}{|p{0.6cm}|p{3.0cm}|p{3cm}|p{3.5cm}|p{3.5cm}|}
+	\hline \textbf{Test No.} & \textbf{Target File} & \textbf{Purpose of Test} & \textbf{Expected Result} & \textbf{Actual Result} \\ 
+	\hline 29 & uploadTopology & Check that routers can be accessed from virl-sim-server & A telnet session to the router hostname will give the router prompt at privileged mode & Prompt was given as expected \\
+	\hline	
+\end{tabular}
 
 \section{Topology 1: Multi-area OSPF}
 
-\begin{center}
-\includegraphics[width=0.8\textwidth]{OSPF-Topology.png}
-\end{center}
+\begin{figure}[h!]
+	\caption{OSPF `Real-World' Topology}
+	\centering
+	\begin{center}
+	\includegraphics[width=0.8\textwidth]{Lab-Design.png}
+	\end{center}
+\end{figure}
 
 I have designed this Topology to represent a simple network with a complex OSPF routing set-up, which may be a possible scenario that a network engineer may wish to experiment with before implementing changes in Production.
 
@@ -988,99 +1083,185 @@ The topology represents the OSPF backbone of a large enterprise network, it incl
 
 In addition to the routes being introduced via the loopbacks on R4 and R5 the topology also injects external routes into OSPF on R1. These are static routes defined on R1 which represent routes from either the Internet or routes from another routing protocol such as EIGRP, IS-IS or BGP. In this form the routes are sent to null 0 (blackhole) as there is no need for connectivity to them.
 
+\subsection{Topology Test Plan}
+
+The Test Plan in Figure 6.2 define a set of scenarios for which the tool should perform in an expected way. This testing assumes that all the pre-requisites defined in the User Guide are met. This subsection reviews the testing of the tool at a high-level, reviewing the emulation of this topology at three sections of the tool. The first is the initial running of networkDiscovery.py, at this stage the tool has produced a topology object and a list of interface mappings for the emulation.
+
+\begin{figure}[h!]
+	\caption{OSPF - Produced JSON Topology}
+	\centering
+	\begin{center}
+		\includegraphics[width=0.4\textwidth]{OSPF-Web.png}
+	\end{center}
+\end{figure}
+
+As seen in Figure 6.3, the visual representation of the JSON created in networkDiscovery matches the real topology. Each node is present and each interconnecting link is in the right location when compared to the interface changes, these interface changes are shown in Listing 6.1
+
+\begin{lstlisting}[caption=Interface mappings for OSPF topology]
+R1 was: FastEthernet0/0 now: GigabitEthernet0/1
+R2 was: FastEthernet0/0 now: GigabitEthernet0/1
+R2 was: Serial0/0 now: GigabitEthernet0/2
+R3 was: FastEthernet0/0 now: GigabitEthernet0/1
+R3 was: FastEthernet0/1 now: GigabitEthernet0/2
+R3 was: Serial0/0 now: GigabitEthernet0/3
+R6 was: FastEthernet0/0 now: GigabitEthernet0/1
+R6 was: FastEthernet0/1 now: GigabitEthernet0/2
+R4 was: FastEthernet0/0 now: GigabitEthernet0/1
+R4 was: Serial0/0 now: GigabitEthernet0/2
+R7 was: FastEthernet0/1 now: GigabitEthernet0/1
+R5 was: Serial0/0 now: GigabitEthernet0/1
+\end{lstlisting}
+
+In addition to the JSON displayed in Figure 6.3, later on in to the execution of the tool the topology is represented as a .VIRL file, by loading this file into VM Maestro the view in Figure 6.4 was produced.
+
+\FloatBarrier
+\begin{figure}[h!]
+	\caption{OSPF - Topology visualised in VIRL}
+	\centering
+	\begin{center}
+		\includegraphics[width=0.4\textwidth]{OSPF-VIRL.png}
+	\end{center}
+\end{figure}
+\FloatBarrier
+
+As the produced .virl file was accepted by the VIRL Engine, the output of the tool was correct. However this does not indicate that the behaviour of the emulation will match that of its hardware counterpart. In order to compare the behaviour of the two some testing was also done to compare the outputs of the OSPF neighbour table, the forwarding table and traceroutes within the emulation. These are shown in Appendix G.
+
+From the information in Appendix G it can be seen that the OSPF behaviour has been well represented on the emulation. The neighbouring used with OSPF has been reflected exactly, however there is some slight variations in the Metric for OSPF routes. This may be due to the bandwidths added to links in order to have them behaviour in a similar manner to their hardware counterparts, if these numbers do not match exactly there is some discrepancy across the metrics. However, the routing choices made were not affected by these changes.
+
 \section{Topology 2: EIGRP Based Routing}
+
+\begin{figure}[h!]
+	\caption{EIGRP `Real-World' Topology}
+	\centering
+	\begin{center}
+		\includegraphics[width=0.8\textwidth]{EIGRP-Topology.png}
+	\end{center}
+\end{figure}
+
+The second topology uses another routing protocol, EIGRP, to handle communication through the network. This is a Distance Vector protocol which uses updates from a routers neighbours in order understand the network as a whole. This is a Cisco proprietary protocol and is used primarily is enterprises which have a full Cisco network. The benefits of EIGRP are that it can provide fast routing changes when outages arise due to it's use of Successor (Primary) and Feasible Successor (Secondary) routes.
+
+The primary metric of EIGRP is the Feasible Distance of the of the route in the topology table. EIGRP takes the route with the lowest Feasible Distance and adds it to the routing table. The topology also includes summary routes as part of EIGRPs capabilities and these should be reflected in the emulated topology.
+
+\subsection{Topology Test Plan}
+
+ Figure 6.6 shows a visual implementation of the topology when stored in a JSON format. From a visual perspective all devices and links are correct. Listing 6.2 shows the mappings of the `real' links to their emulated counterparts, all links that were part of the discovery process are displayed.
+
+\FloatBarrier
+\begin{figure}[h!]
+	\caption{EIGRP - Produced JSON Topology}
+	\centering
+	\begin{center}
+		\includegraphics[width=0.4\textwidth]{EIGRP-Web.png}
+	\end{center}
+\end{figure}
+\FloatBarrier
+
+\begin{lstlisting}[caption=Interface mappings for EIGRP topology]
+	R1 was: Serial0/0 now: GigabitEthernet0/1
+	R1 was: Serial0/1 now: GigabitEthernet0/2
+	R3 was: FastEthernet0/0 now: GigabitEthernet0/1
+	R3 was: Serial0/0 now: GigabitEthernet0/2
+	R2 was: FastEthernet0/0 now: GigabitEthernet0/1
+	R2 was: FastEthernet0/1 now: GigabitEthernet0/2
+	R2 was: Serial0/0 now: GigabitEthernet0/3
+	R4 was: FastEthernet0/0 now: GigabitEthernet0/1
+	R5 was: FastEthernet0/0 now: GigabitEthernet0/1
+\end{lstlisting}
+
+A second method of testing whether the topology is correct is to compare the original topology to the visual representation of a .virl file. This is shown in Figure 6.8, it can be seen that the general structure is the same as the topology and all links remain in their correct locations. One obvious change is the replacement of switches with SEGMENT objects, however this is purely cosmetic.
+
+\begin{figure}[h!]
+	\caption{EIGRP - Topology visualised in VIRL}
+	\centering
+	\begin{center}
+		\includegraphics[width=0.5\textwidth]{EIGRP-VIRL.png}
+	\end{center}
+\end{figure}
+
+The produced .virl file was accepted by the VIRL engine and a virl-sim-server was created, from this information was extracted from the emulated devices which was compared to the hardware routers. This information is viewable in Appendix H. A review of this information shows that the emulated representation of the network behaved in a similar way, with routing tables being reflected across the two systems. One particular difference that was noted was the changes in Feasible Distance for routes across the two systems, this has been identified as being caused by a lapse of information on interfaces and the difference between Serial and Gigabit links. As can be seen when comparing the two routing tables however, this made no impact on the routing choices made by R1. Another change that is of not is two additional routes to 10.255.0.0/16, this is the connection to the Management Network provided via GigabitEthernet0/0.
 
 \section{Topology 3: Service Provider BGP Topology}
 
-\chapter*{Implementation Notes}
+\begin{figure}[h!]
+	\caption{BGP `Real-World' Topology}
+	\centering
+	\begin{center}
+		\includegraphics[width=0.8\textwidth]{BGP-Topology.png}
+	\end{center}
+\end{figure}
 
-\section*{Simulation Tools}
+The final topology used for testing is using BGP, the protocol used for routing across the internet. This lab was inspired by the coursework used in the Computer Science module COC190, it represents two Internet Service Providers with unique Autonomous System Numbers (ASNs) which are peering and exchanging routes. The leftmost ISP is using ASN 5000 and the right uses ASN 6000, the two maintain a single BGP peering on the central link using the 155.100.0.0/30 network. Interior routing of the two Autonomous Systems are provided by a combination of iBGP and IS-IS. iBGP provides the interior network with information about external routes, in AS5000 these routes are provided by R3 and in AS6000 they are provided by R4. The interior protocol IS-IS provides a fast and lightweight method of propagating local routes throughout the network. This test will check whether the combination of IS-IS, iBGP and eBGP work correctly when ported to an emulated network.
 
-\subsection*{Simulation Start}
+\subsection{Topology Test Plan}
 
-A simulation can be started on the VIRL host itself by specifying the .virl file to be processed and the user workspace for it to be used in. This process is shown below:
+The BGP peering in this topology is maintained through the use of Loopbacks as a source for the connection, this was used as an added test to ensure that Loopbacks were correctly represented in emulation networks.  For the purposes of the tools deployment however it was found that all links in each Autonomous System were required to be in BGP, otherwise the tool could not contact the routers. Once this change was made to the routing the topology was correctly emulated in VIRL. Figure 6.5 shows the topology defined by the discovered network, Listing 6.3 shows the mapping of interfaces from the real device to the emulated version.
 
-\begin{lstlisting}
-virl_std_client simengine-launch --virl-file /path/to/starter.virl
-Session ID is starter-Ewn0Mn
-export STD_SESSION=starter-Ewn0Mn
+\FloatBarrier
+\begin{figure}[h!]
+	\caption{BGP - Produced JSON Topology}
+	\centering
+	\begin{center}
+		\includegraphics[width=0.5\textwidth]{BGP-Web.png}
+	\end{center}
+\end{figure}
+\FloatBarrier
+
+\begin{lstlisting}[caption=Interface mappings for BGP topology]
+R1 was: Serial0/0 now: GigabitEthernet0/1
+R1 was: Serial0/1 now: GigabitEthernet0/2
+R2 was: Serial0/0 now: GigabitEthernet0/1
+R2 was: Serial0/1 now: GigabitEthernet0/2
+R3 was: FastEthernet0/0 now: GigabitEthernet0/1
+R3 was: Serial0/0 now: GigabitEthernet0/2
+R3 was: Serial0/1 now: GigabitEthernet0/3
+R4 was: FastEthernet0/0 now: GigabitEthernet0/1
+R4 was: Serial0/0 now: GigabitEthernet0/2
+R4 was: Serial0/1 now: GigabitEthernet0/3
+R6 was: Serial0/0 now: GigabitEthernet0/1
+R6 was: Serial0/1 now: GigabitEthernet0/2
+R5 was: Serial0/0 now: GigabitEthernet0/1
+R5 was: Serial0/1 now: GigabitEthernet0/2
 \end{lstlisting}
 
-\subsection*{REST API}
+This case also passed the VIRL Engine checks and produced a valid .virl file, this was parsed in VM Maestro and produced the topology shown in Figure 6.7.
 
-Details of the current running simulations for an account can be determined via the following URL: http://virl.lboro.ac.uk:19399/roster/rest/
+\FloatBarrier
+\begin{figure}[h!]
+	\caption{BGP - Topology visualised in VIRL}
+	\centering
+	\begin{center}
+		\includegraphics[width=0.8\textwidth]{BGP-VIRL.png}
+	\end{center}
+\end{figure}
+\FloatBarrier
 
-The output of this called is shown in section 4.3
+Once this .virl file was passed to emulation engine the result was a fully working BGP network. BGP peers defined in the real topology were able to start as intended and routes available and correct. In addition to the eBGP routing the interior IS-IS and iBGP routing works as intended and there is full network connectivity. Appendix I has some examples of the tests run to compare the emulated network to its hardware counterpart. As can be seen in when comparing BGP Peering for R1 there is one additional prefix for the real device, this is the route to the LAN segment which holds the discovery server and is omitted from the emulation.
 
-By analysing the output of this data the public ip address of the LXC Host can be determined and access to the simulation can be granted.
+\chapter{Evaluation}
 
-\subsection*{LXC Host}
+\section{Summary of Tasks}
 
-The LXC host is created when the simulation is first started, by selecting the Management Network type as a 'Private Simulation Network'. Upon the start of a simulation an additional Linux Container (LXC) will be created. This container will be available on a public ip address and can be accessed externally (within the Loughborough network)through SSH. Once connected to the container all other hosts on the network are directly connected and can be accessed using their management ip address.
+The aim of this project was to provide an investigation into the potential uses of Network Emulation as a testing platform for medium to large enterprise. On the whole the tool produced enables an Engineer of such organisation to choose an area of their network to emulate, the tool pushes this from the discovery phase through to giving the user a jumphost in order to interact with their emulation. This is the method used to implement changes on any Cisco IOS device in large enterprise and would provide an Engineer with all the tools needed to implement a change. In addition to this CLI access to the IOSv devices, the tool also produces a jumphost into the management network of the emulation. Using this network an Engineer can make use of further network management tools to provide an in-depth view of the network through technologies such as Netflow, SNMP or Software Defined Networking.
 
-\section*{Connectivity Tools}
+Later parts of the Design phase included the implementation of a system which would provide a new type of interaction with an emulated network. Taking form as a webserver on the virl host it would allow the user to interact with the emulation through interaction with elements such as routers and links, these interactions would produce visual feedback to the user about the impact. This could be in the form of coloured links indicating current traffic volumes or routing decisions. Unfortunately due to some technical problems defined in Section 5.6.5 and restrictions on time this implementation was not possible and the project was de-scoped.
 
-\section*{Creation of SNAT Connection}
+\section{Difficulties Encountered}
 
-As described in the LXC Host section, all hosts can be accessed externally by using the LXC host as a jumphost into the simulation. However, this does not provide routing to the outside world. A use-case for the SNAT object would be a single point of exit to the outside world, as would be used in a standard network infrastructure. Connecting a SNAT object to a designated 'external' router can provide access to the entire simulation if required.
+Throughout the project a few small difficulties were encountered, the one with the largest impact on development being the unavailability of HTTP access to the SNAT Network. However there were further constraints on the development of this tool, one notable constraint was the access that was allowed to the University infrastructure. As discussed in Section 5.1 the development was based on another emulation tool called GNS3, this was chosen for development as it is a lightweight method of emulating real Cisco IOS versions. In addition to this is provides connection methods such as virtualbox integration and the ability to connect the topology to the internet. The connection to the internet was provided via a Loopback interface on the Windows desktop on which development was done, using Windows' in-built network tools the primary internet connection could be shared to this loopback, thus connecting the GNS3 emulation to the internet. Security restrictions on both the Loughborough VPN and Eduroam wireless network prevent computers with shared internet connections from connecting to the network. As the VIRL section of this tool requires a connection to the VPN this made direct connections from the GNS3 simulation through to VIRL. The solution to this problem was to use an intermediate server running SFTP as a storage area whilst the shared connection was disabled and the VPN connection was established.
 
-\subsection*{Default Routes}
+A second area of difficulty was the interaction with the VIRL server. As VIRL is a relatively young platform there is only Vendor documentation to support it's use. In the development of this tool it was found that this documentation was not necessarily detailed enough for use outside of Cisco, this added difficulty in the later stages of development when interacting with the REST API on VIRL. One specific issue found was the time taken for a simulation to go live, this could change under seemingly random circumstances. This was exacerbated by another problem in that there was no way to know when an emulation was ready for use, a state flag was available for a device but for Ubuntu servers this would be flagged as Active 10-15 seconds before the server could accept network traffic. In order to overcome this uncertainty some parts of the tool use features such as timeouts on network requests and `wait' statements in code in order to overcome changes in boot time, however this sometimes does not work and the VIRL server cannot respond causing exceptions in the code.
 
-For any devices that require a SNAT object, a route needs to be added on the router for connection to the SNAT object. This can take the form of a default route (below)
+\section{Future Work}
 
-\begin{lstlisting}
-ip route 0.0.0.0 0.0.0.0 10.254.0.1
-\end{lstlisting}
+As the development of this tool fell short to technical reasons, future work would first include the webserver outlined in Section 5.6.5. This webserver would provide a more user friendly experience whereas the tool in it's current state is primarily a set of command-line scripts. In addition to this additional user-experience it will also add higher-level methods of understanding how traffic is moving around a network, this will improve the tools use for those with less understanding of networks in Change Management scenarios.
 
-\subsection*{Server IP Addressing}
+Other future work would be to implement Layer 2 capabilities at it's full extent, Cisco are providing a Layer-2 IOSv image in later versions of VIRL which would accommodate this functionality. When implemented a User could emulate an entire network down to the access-layer of their topology, providing testing at granular levels such as ensuring Spanning Tree fail overs occur as designed and the use of VLANs for segregating network traffic in security scenarios.
 
-When connected to a multipoint connection a server is assigned an ip address in the subnet range, this is usually done sequentially. Alternatively this can be defined in the .virl file.
+A third improvement that could be made is to expand the functionality of this tool to include real-world servers. Virl allows the creation of pre-set Ubuntu images that can hold the full contents of a real server. The addition of these servers will allow the User to investigate the impact of network changes on a server's traffic and will enable the testing of the servers tolerance to network interruption and even emulate Disaster Recovery situations, understanding how servers fail-over in order to maximise uptime.
 
-\subsection*{Server DNS}
+\section{Thoughts on the project}
 
-DNS Servers can be added to a host by editing the /etc/resolv.conf file. Alternatively they can be provided to a server if DHCP is enabled on the router.
-
-\section*{RANCID Installation \& Use}
-
-Look to set up SSH rather than telnet (For security)
-\\
-Change Protocol type on router side (2vs1)
-\\
-NOTE: Hostnames in the .cloginrc file need to be lowercase
-
-\section*{Initial Discovery}
-
-Use cdpr on the discovery server in order to discover the default gateway address + port
-
-sudo apt-get install cdpr
-
-sudo cdpr
-
-\section*{Python Path}
-
- export PYTHONPATH=/opt/cisco/onep/lib/python2.7/site-packages
- 
-\section*{SNMP to get CDP Neighbors}
-
-snmpwalk -v 2c -c public 172.30.0.1 .1.3.6.1.4.1.9.9.23.1.2.1.1.6.1.2
-
-.1.3.6.1.4.1.9.9.23.1.2.1.1 - Gives information of sh cdp neigh
-
-1.3.6.1.4.1.9.9.23.1.2.1.1.6  - Gives the hostnames of CDP neighbours 
-
-.1.3.1.4.1.9.9.23.1.2.1.1.4 - Gets the ips for the above
-
-.1.3.6.1.4.1.9.9.23.1.2.1.1.7 - Gives local interfaces
-
-.1.3.6.1.2.1.4.1 - Gives ip forwarding (1 is router, 0 is a switch)
-
-.1.3.6.1.4.1.9.9.23.1.2.1.1.7 - Gives interfaces on neighbour
-
-\section{Virl Server Setup}
-route add default gw 192.168.1.254 eth0
-
-\section{Change server interface ip}
-ifconfig eth1 up 10.254.0.36 netmask 255.255.255.0
+I feel that this project was a success in its original concept of producing virtual networks for a Network Engineer to use for both testing and as a learning environment. However there is still further functionality that can be added to the tool in order to produce the abilities that were discussed in earlier sections. I feel that what has been produced gives a firm base for future work in this area as the ability to quickly produce a sandboxed, emulated network allows for in-depth testing such as the What-if? scenarios or granular traffic analysis without the need for expensive hardware. In addition to the uses for testing, as a student I can currently see uses for this tool in education. Allowing a lecturer to quickly produce emulated networks for students to test concepts or to implement their own topologies with. As discussed in Section 2.3, currently there is no industry standard use for virtual network environments. However I believe that in the coming years there will be uptake in these tools both as a testing and learning platform. In a high-stakes sector such as Finance any changes to infrastructure must be fully understood and documented before implementation can occur, tools such as this can provide an Engineer with this knowledge.
 
 \bibliographystyle{plainnat}
 \bibliography{bibliography}
@@ -1551,6 +1732,563 @@ permissions: '0644'
 
 \end{lstlisting}
 
+\chapter{EIGRP Testing Evidence}
+
+This chapter compares the output from the hardware router and the emulated devices in VIRL.
+
+\section{OSPF Neighbour Table}
+
+\subsection{Real Hardware}
+
+\begin{lstlisting}
+R1#sh ip ospf neighbor
+
+Neighbor ID     Pri   State           Dead Time   Address         Interface
+2.2.2.2           1   FULL/BDR        00:00:30    172.30.0.2      FastEthernet0/0
+3.3.3.3           1   FULL/DR         00:00:32    172.30.0.3      FastEthernet0/0
+\end{lstlisting}
+
+\subsection{Emulated Device}
+\begin{lstlisting}
+R1#sh ip ospf neighbor
+
+Neighbor ID     Pri   State           Dead Time   Address         Interface
+2.2.2.2           1   FULL/BDR        00:00:34    172.30.0.2      GigabitEthernet0/1
+3.3.3.3           1   FULL/DR         00:00:35    172.30.0.3      GigabitEthernet0/1
+\end{lstlisting}
+
+\section{OSPF Routing Tables}
+
+\subsection{Real Hardware}
+\begin{lstlisting}
+R1#SH IP ROUTE
+Codes: C - connected, S - static, R - RIP, M - mobile, B - BGP
+D - EIGRP, EX - EIGRP external, O - OSPF, IA - OSPF inter area
+N1 - OSPF NSSA external type 1, N2 - OSPF NSSA external type 2
+E1 - OSPF external type 1, E2 - OSPF external type 2
+i - IS-IS, su - IS-IS summary, L1 - IS-IS level-1, L2 - IS-IS level-2
+ia - IS-IS inter area, * - candidate default, U - per-user static route
+o - ODR, P - periodic downloaded static route
+
+Gateway of last resort is 192.168.137.1 to network 0.0.0.0
+
+1.0.0.0/32 is subnetted, 1 subnets
+C       1.1.1.1 is directly connected, Loopback0
+2.0.0.0/32 is subnetted, 1 subnets
+O       2.2.2.2 [110/11] via 172.30.0.2, 00:37:44, FastEthernet0/0
+3.0.0.0/32 is subnetted, 1 subnets
+O       3.3.3.3 [110/11] via 172.30.0.3, 00:37:44, FastEthernet0/0
+172.16.0.0/16 is variably subnetted, 5 subnets, 2 masks
+S       172.16.0.0/24 is directly connected, Null0
+O       172.16.0.0/16 is a summary, 00:38:20, Null0
+S       172.16.1.0/24 is directly connected, Null0
+S       172.16.2.0/24 is directly connected, Null0
+S       172.16.3.0/24 is directly connected, Null0
+172.30.0.0/16 is variably subnetted, 4 subnets, 2 masks
+O IA    172.30.50.0/30 [110/210] via 172.30.0.2, 00:37:46, FastEthernet0/0
+C       172.30.0.0/24 is directly connected, FastEthernet0/0
+O IA    172.30.100.4/30 [110/220] via 172.30.0.3, 00:37:46, FastEthernet0/0
+O IA    172.30.100.0/30 [110/210] via 172.30.0.3, 00:37:46, FastEthernet0/0
+10.0.0.0/21 is subnetted, 2 subnets
+O IA    10.50.0.0 [110/211] via 172.30.0.2, 00:37:46, FastEthernet0/0
+O IA    10.100.0.0 [110/211] via 172.30.0.3, 00:37:46, FastEthernet0/0
+O IA 192.168.0.0/24 [110/20] via 172.30.0.3, 00:37:46, FastEthernet0/0
+C    192.168.137.0/24 is directly connected, FastEthernet0/1
+S*   0.0.0.0/0 [1/0] via 192.168.137.1
+\end{lstlisting}
+
+\subsection{Emulated Device}
+\begin{lstlisting}
+R1#sh ip route
+Codes: L - local, C - connected, S - static, R - RIP, M - mobile, B - BGP
+D - EIGRP, EX - EIGRP external, O - OSPF, IA - OSPF inter area
+N1 - OSPF NSSA external type 1, N2 - OSPF NSSA external type 2
+E1 - OSPF external type 1, E2 - OSPF external type 2
+i - IS-IS, su - IS-IS summary, L1 - IS-IS level-1, L2 - IS-IS level-2
+ia - IS-IS inter area, * - candidate default, U - per-user static route
+o - ODR, P - periodic downloaded static route, H - NHRP, l - LISP
+a - application route
++ - replicated route, % - next hop override
+
+Gateway of last resort is not set
+
+1.0.0.0/32 is subnetted, 1 subnets
+C        1.1.1.1 is directly connected, Loopback0
+2.0.0.0/32 is subnetted, 1 subnets
+O        2.2.2.2 [110/2] via 172.30.0.2, 00:00:35, GigabitEthernet0/1
+3.0.0.0/32 is subnetted, 1 subnets
+O        3.3.3.3 [110/2] via 172.30.0.3, 00:00:45, GigabitEthernet0/1
+10.0.0.0/8 is variably subnetted, 4 subnets, 3 masks
+O IA     10.50.0.0/21 [110/202] via 172.30.0.2, 00:00:35, GigabitEthernet0/1
+O IA     10.100.0.0/21 [110/202] via 172.30.0.3, 00:00:35, GigabitEthernet0/1
+C        10.255.0.0/16 is directly connected, GigabitEthernet0/0
+L        10.255.0.5/32 is directly connected, GigabitEthernet0/0
+172.16.0.0/16 is variably subnetted, 5 subnets, 2 masks
+O        172.16.0.0/16 is a summary, 00:01:30, Null0
+S        172.16.0.0/24 is directly connected, Null0
+S        172.16.1.0/24 is directly connected, Null0
+S        172.16.2.0/24 is directly connected, Null0
+S        172.16.3.0/24 is directly connected, Null0
+172.30.0.0/16 is variably subnetted, 5 subnets, 3 masks
+C        172.30.0.0/24 is directly connected, GigabitEthernet0/1
+L        172.30.0.1/32 is directly connected, GigabitEthernet0/1
+O IA     172.30.50.0/30 [110/201] via 172.30.0.2, 00:00:35, GigabitEthernet0/1
+O IA     172.30.100.0/30
+[110/201] via 172.30.0.3, 00:00:45, GigabitEthernet0/1
+O IA     172.30.100.4/30
+[110/202] via 172.30.0.3, 00:00:35, GigabitEthernet0/1
+O IA  192.168.0.0/24 [110/2] via 172.30.0.3, 00:00:45, GigabitEthernet0/1
+\end{lstlisting}
+
+\section{Example Traceroute}
+
+\subsection{Real Hardware}
+\begin{lstlisting}
+R1#traceroute 172.30.100.6
+
+Type escape sequence to abort.
+Tracing the route to 172.30.100.6
+
+1 172.30.0.3 40 msec 20 msec 8 msec
+2 172.30.100.2 84 msec 40 msec 32 msec
+3 172.30.100.6 44 msec 56 msec 44 msec
+\end{lstlisting}
+
+\subsection{Emulated Device}
+\begin{lstlisting}
+R1#traceroute 172.30.100.6
+Type escape sequence to abort.
+Tracing the route to 172.30.100.6
+VRF info: (vrf in name/id, vrf out name/id)
+1 172.30.0.3 1 msec 5 msec 1 msec
+2 172.30.100.2 8 msec 8 msec 14 msec
+3 172.30.100.6 10 msec 10 msec 10 msec
+\end{lstlisting}
+
+\chapter{EIGRP Testing Evidence}
+
+This chapter compares the output from the hardware router and the emulated devices in VIRL.
+
+\section{EIGRP Topology Table}
+
+\subsection{Real Hardware}
+\begin{lstlisting}
+R1#sh ip eigrp topology
+IP-EIGRP Topology Table for AS(1)/ID(172.30.8.1)
+
+Codes: P - Passive, A - Active, U - Update, Q - Query, R - Reply,
+r - reply Status, s - sia Status
+
+P 10.1.2.0/24, 1 successors, FD is 10537472
+via 10.1.35.2 (10537472/281600), Serial0/0
+via 10.1.25.2 (20537600/281600), Serial0/1
+P 10.1.26.0/24, 1 successors, FD is 10563072
+via 10.1.35.2 (10563072/307200), Serial0/0
+via 10.1.25.2 (20537600/281600), Serial0/1
+P 10.1.25.0/30, 1 successors, FD is 20512000
+via Connected, Serial0/1
+P 10.1.35.0/30, 1 successors, FD is 10511872
+via Connected, Serial0/0
+P 172.30.3.1/32, 1 successors, FD is 128256
+via Connected, Loopback2
+P 172.30.2.0/24, 1 successors, FD is 128256
+via Connected, Loopback1
+P 172.30.0.0/21, 1 successors, FD is 128256
+via Summary (128256/0), Null0
+P 172.30.0.0/24, 1 successors, FD is 281600
+via Connected, FastEthernet0/1
+
+Codes: P - Passive, A - Active, U - Update, Q - Query, R - Reply,
+r - reply Status, s - sia Status
+
+P 172.30.1.0/24, 1 successors, FD is 128256
+via Connected, Loopback0
+P 172.30.7.1/32, 1 successors, FD is 128256
+via Connected, Loopback6
+P 172.30.6.1/32, 1 successors, FD is 128256
+via Connected, Loopback5
+P 172.30.5.1/32, 1 successors, FD is 128256
+via Connected, Loopback4
+P 172.30.4.1/32, 1 successors, FD is 128256
+via Connected, Loopback3
+P 172.30.8.1/32, 1 successors, FD is 128256
+via Connected, Loopback7
+
+\end{lstlisting}
+
+\subsection{Emulated Device}
+
+\begin{lstlisting}
+R1#sh ip eigrp topology
+EIGRP-IPv4 Topology Table for AS(1)/ID(172.30.8.1)
+Codes: P - Passive, A - Active, U - Update, Q - Query, R - Reply,
+r - reply Status, s - sia Status
+
+P 10.1.26.0/24, 1 successors, FD is 10000640
+via 10.1.35.2 (10000640/26112), GigabitEthernet0/1
+via 10.1.25.2 (20000512/25856), GigabitEthernet0/2
+P 172.30.2.0/24, 1 successors, FD is 128256
+via Connected, Loopback1
+P 10.1.35.0/30, 1 successors, FD is 10000128
+via Connected, GigabitEthernet0/1
+P 172.30.0.0/21, 1 successors, FD is 128256
+via Summary (128256/0), Null0
+P 10.1.2.0/24, 1 successors, FD is 10000384
+via 10.1.35.2 (10000384/25856), GigabitEthernet0/1
+via 10.1.25.2 (20000512/25856), GigabitEthernet0/2
+P 172.30.1.0/24, 1 successors, FD is 128256
+via Connected, Loopback0
+P 172.30.3.1/32, 1 successors, FD is 128256
+via Connected, Loopback2
+P 172.30.6.1/32, 1 successors, FD is 128256
+via Connected, Loopback5
+P 10.1.25.0/30, 1 successors, FD is 20000256
+via Connected, GigabitEthernet0/2
+P 172.30.7.1/32, 1 successors, FD is 128256
+via Connected, Loopback6
+P 172.30.8.1/32, 1 successors, FD is 128256
+via Connected, Loopback7
+P 172.30.4.1/32, 1 successors, FD is 128256
+via Connected, Loopback3
+P 172.30.5.1/32, 1 successors, FD is 128256
+via Connected, Loopback4
+\end{lstlisting}
+
+\section{EIGRP Routing Table}
+
+\subsection{Real Hardware}
+\begin{lstlisting}
+R1#sh ip route
+Codes: C - connected, S - static, R - RIP, M - mobile, B - BGP
+D - EIGRP, EX - EIGRP external, O - OSPF, IA - OSPF inter area
+N1 - OSPF NSSA external type 1, N2 - OSPF NSSA external type 2
+E1 - OSPF external type 1, E2 - OSPF external type 2
+i - IS-IS, su - IS-IS summary, L1 - IS-IS level-1, L2 - IS-IS level-2
+ia - IS-IS inter area, * - candidate default, U - per-user static route
+o - ODR, P - periodic downloaded static route
+
+Gateway of last resort is 192.168.137.1 to network 0.0.0.0
+
+172.30.0.0/16 is variably subnetted, 10 subnets, 3 masks
+C       172.30.3.1/32 is directly connected, Loopback2
+C       172.30.2.0/24 is directly connected, Loopback1
+C       172.30.0.0/24 is directly connected, FastEthernet0/1
+D       172.30.0.0/21 is a summary, 00:01:18, Null0
+C       172.30.1.0/24 is directly connected, Loopback0
+C       172.30.7.1/32 is directly connected, Loopback6
+C       172.30.6.1/32 is directly connected, Loopback5
+C       172.30.5.1/32 is directly connected, Loopback4
+C       172.30.4.1/32 is directly connected, Loopback3
+C       172.30.8.1/32 is directly connected, Loopback7
+10.0.0.0/8 is variably subnetted, 4 subnets, 2 masks
+D       10.1.2.0/24 [90/10537472] via 10.1.35.2, 00:01:20, Serial0/0
+D       10.1.26.0/24 [90/10563072] via 10.1.35.2, 00:01:21, Serial0/0
+C       10.1.25.0/30 is directly connected, Serial0/1
+C       10.1.35.0/30 is directly connected, Serial0/0
+192.168.137.0/30 is subnetted, 1 subnets
+C       192.168.137.0 is directly connected, FastEthernet0/0
+S*   0.0.0.0/0 [1/0] via 192.168.137.1
+\end{lstlisting}
+
+\subsection{Emnulated Device}
+\begin{lstlisting}
+R1#sh ip route
+Codes: L - local, C - connected, S - static, R - RIP, M - mobile, B - BGP
+D - EIGRP, EX - EIGRP external, O - OSPF, IA - OSPF inter area
+N1 - OSPF NSSA external type 1, N2 - OSPF NSSA external type 2
+E1 - OSPF external type 1, E2 - OSPF external type 2
+i - IS-IS, su - IS-IS summary, L1 - IS-IS level-1, L2 - IS-IS level-2
+ia - IS-IS inter area, * - candidate default, U - per-user static route
+o - ODR, P - periodic downloaded static route, H - NHRP, l - LISP
+a - application route
++ - replicated route, % - next hop override
+
+Gateway of last resort is not set
+
+10.0.0.0/8 is variably subnetted, 8 subnets, 4 masks
+D        10.1.2.0/24 [90/10000384] via 10.1.35.2, 00:01:40, GigabitEthernet0/1
+C        10.1.25.0/30 is directly connected, GigabitEthernet0/2
+L        10.1.25.1/32 is directly connected, GigabitEthernet0/2
+D        10.1.26.0/24
+[90/10000640] via 10.1.35.2, 00:01:38, GigabitEthernet0/1
+C        10.1.35.0/30 is directly connected, GigabitEthernet0/1
+L        10.1.35.1/32 is directly connected, GigabitEthernet0/1
+C        10.255.0.0/16 is directly connected, GigabitEthernet0/0
+L        10.255.0.3/32 is directly connected, GigabitEthernet0/0
+172.30.0.0/16 is variably subnetted, 11 subnets, 3 masks
+D        172.30.0.0/21 is a summary, 00:01:47, Null0
+C        172.30.1.0/24 is directly connected, Loopback0
+L        172.30.1.1/32 is directly connected, Loopback0
+C        172.30.2.0/24 is directly connected, Loopback1
+L        172.30.2.1/32 is directly connected, Loopback1
+C        172.30.3.1/32 is directly connected, Loopback2
+C        172.30.4.1/32 is directly connected, Loopback3
+C        172.30.5.1/32 is directly connected, Loopback4
+C        172.30.6.1/32 is directly connected, Loopback5
+C        172.30.7.1/32 is directly connected, Loopback6
+C        172.30.8.1/32 is directly connected, Loopback7
+\end{lstlisting}
+
+\section{EIGRP Example Traceroute}
+
+\subsection{Real Hardware}
+\begin{lstlisting}
+R1#traceroute 10.1.2.1
+
+Type escape sequence to abort.
+Tracing the route to 10.1.2.1
+
+1 10.1.35.2 24 msec 8 msec 0 msec
+2 10.1.2.1 88 msec 40 msec 40 msec
+\end{lstlisting}
+
+\subsection{Emulated Device}
+\begin{lstlisting}
+R1#traceroute 10.1.2.1
+Type escape sequence to abort.
+Tracing the route to 10.1.2.1
+VRF info: (vrf in name/id, vrf out name/id)
+1 10.1.35.2 9 msec 1 msec 1 msec
+2 10.1.2.1 6 msec 15 msec 9 msec
+\end{lstlisting}
+
+\chapter{BGP Testing Evidence}
+
+This chapter compares the output from the hardware router and the emulated devices in VIRL.
+
+\section{BGP Summary}
+
+\subsection{Real Hardware}
+\begin{lstlisting}
+R1#sh ip bgp summary
+BGP router identifier 12.1.1.1, local AS number 5000
+BGP table version is 188, main routing table version 188
+19 network entries using 2280 bytes of memory
+19 path entries using 988 bytes of memory
+6/5 BGP path/bestpath attribute entries using 744 bytes of memory
+1 BGP AS-PATH entries using 24 bytes of memory
+0 BGP route-map cache entries using 0 bytes of memory
+0 BGP filter-list cache entries using 0 bytes of memory
+BGP using 4036 total bytes of memory
+BGP activity 21/2 prefixes, 21/2 paths, scan interval 60 secs
+
+Neighbor        V    AS MsgRcvd MsgSent   TblVer  InQ OutQ Up/Down  State/PfxRcd
+12.2.2.2        4  5000     137     137      188    0    0 02:13:07        0
+12.3.3.3        4  5000     163     137      188    0    0 02:13:00       19
+\end{lstlisting}
+
+\subsection{Emulated Device}
+\begin{lstlisting}
+R1#sh ip bgp summary
+BGP router identifier 12.10.0.1, local AS number 5000
+BGP table version is 19, main routing table version 19
+18 network entries using 2520 bytes of memory
+18 path entries using 1440 bytes of memory
+5/5 BGP path/bestpath attribute entries using 760 bytes of memory
+1 BGP AS-PATH entries using 24 bytes of memory
+0 BGP route-map cache entries using 0 bytes of memory
+0 BGP filter-list cache entries using 0 bytes of memory
+BGP using 4744 total bytes of memory
+BGP activity 18/0 prefixes, 18/0 paths, scan interval 60 secs
+
+Neighbor        V           AS MsgRcvd MsgSent   TblVer  InQ OutQ Up/Down  State/PfxRcd
+12.2.2.2        4         5000      39      40       19    0    0 00:33:42        0
+12.3.3.3        4         5000      46      39       19    0    0 00:33:40       18
+\end{lstlisting}
+
+\section{IS-IS Topology Table}
+
+\subsection{Real Hardware}
+\begin{lstlisting}
+R1#sh isis topology
+
+IS-IS paths to level-1 routers
+System Id            Metric     Next-Hop             Interface   SNPA
+R1                   --
+R2                   10         R2                   Se0/0       *HDLC*
+R3                   10         R3                   Se0/1       *HDLC*
+\end{lstlisting}
+
+\subsection{Emulated Device}
+\begin{lstlisting}
+R1#sh isis topology
+
+Tag null:
+IS-IS TID 0 paths to level-1 routers
+System Id            Metric     Next-Hop             Interface   SNPA
+R1                   --
+R2                   10         R2                   Gi0/1       fa16.3e37.571b
+R3                   10         R3                   Gi0/2       fa16.3eef.bcf0
+\end{lstlisting}
+
+\section{Routing Table}
+
+\subsection{Real Hardware}
+
+\begin{lstlisting}
+R1#sh ip route
+Codes: C - connected, S - static, R - RIP, M - mobile, B - BGP
+D - EIGRP, EX - EIGRP external, O - OSPF, IA - OSPF inter area
+N1 - OSPF NSSA external type 1, N2 - OSPF NSSA external type 2
+E1 - OSPF external type 1, E2 - OSPF external type 2
+i - IS-IS, su - IS-IS summary, L1 - IS-IS level-1, L2 - IS-IS level-2
+ia - IS-IS inter area, * - candidate default, U - per-user static route
+o - ODR, P - periodic downloaded static route
+
+Gateway of last resort is 192.168.137.1 to network 0.0.0.0
+
+155.100.0.0/30 is subnetted, 1 subnets
+i L1    155.100.1.0 [115/20] via 12.0.0.2, Serial0/1
+172.16.0.0/24 is subnetted, 4 subnets
+S       172.16.0.0 is directly connected, Null0
+S       172.16.1.0 is directly connected, Null0
+S       172.16.2.0 is directly connected, Null0
+S       172.16.3.0 is directly connected, Null0
+12.0.0.0/8 is variably subnetted, 10 subnets, 3 masks
+i L1    12.12.0.0/24 [115/20] via 12.0.0.2, Serial0/1
+i L1    12.0.0.8/30 [115/20] via 12.0.0.6, Serial0/0
+C       12.10.0.0/24 is directly connected, Loopback1
+i L1    12.11.0.0/24 [115/20] via 12.0.0.6, Serial0/0
+C       12.0.0.4/30 is directly connected, Serial0/0
+C       12.5.5.0/24 is directly connected, FastEthernet0/0
+C       12.0.0.0/30 is directly connected, Serial0/1
+C       12.1.1.1/32 is directly connected, Loopback0
+i L1    12.2.2.2/32 [115/20] via 12.0.0.6, Serial0/0
+i L1    12.3.3.3/32 [115/20] via 12.0.0.2, Serial0/1
+C    192.168.137.0/24 is directly connected, FastEthernet0/1
+14.0.0.0/8 is variably subnetted, 9 subnets, 3 masks
+B       14.12.0.0/24 [200/20] via 12.3.3.3, 01:16:44
+B       14.10.0.0/24 [200/0] via 12.3.3.3, 01:16:44
+B       14.11.0.0/24 [200/20] via 12.3.3.3, 01:16:44
+B       14.0.0.8/30 [200/20] via 12.3.3.3, 01:16:44
+B       14.6.6.6/32 [200/20] via 12.3.3.3, 01:13:46
+B       14.4.4.4/32 [200/0] via 12.3.3.3, 01:16:44
+B       14.0.0.4/30 [200/0] via 12.3.3.3, 01:16:44
+B       14.5.5.5/32 [200/20] via 12.3.3.3, 01:13:46
+B       14.0.0.0/30 [200/0] via 12.3.3.3, 01:16:44
+S*   0.0.0.0/0 [1/0] via 192.168.137.1
+\end{lstlisting}
+
+\subsection{Emulated Device}
+
+\begin{lstlisting}
+R1#sh ip route
+Codes: L - local, C - connected, S - static, R - RIP, M - mobile, B - BGP
+D - EIGRP, EX - EIGRP external, O - OSPF, IA - OSPF inter area
+N1 - OSPF NSSA external type 1, N2 - OSPF NSSA external type 2
+E1 - OSPF external type 1, E2 - OSPF external type 2
+i - IS-IS, su - IS-IS summary, L1 - IS-IS level-1, L2 - IS-IS level-2
+ia - IS-IS inter area, * - candidate default, U - per-user static route
+o - ODR, P - periodic downloaded static route, H - NHRP, l - LISP
+a - application route
++ - replicated route, % - next hop override
+
+Gateway of last resort is not set
+
+10.0.0.0/8 is variably subnetted, 2 subnets, 2 masks
+C        10.255.0.0/16 is directly connected, GigabitEthernet0/0
+L        10.255.0.4/32 is directly connected, GigabitEthernet0/0
+12.0.0.0/8 is variably subnetted, 12 subnets, 3 masks
+C        12.0.0.0/30 is directly connected, GigabitEthernet0/2
+L        12.0.0.1/32 is directly connected, GigabitEthernet0/2
+C        12.0.0.4/30 is directly connected, GigabitEthernet0/1
+L        12.0.0.5/32 is directly connected, GigabitEthernet0/1
+i L1     12.0.0.8/30 [115/20] via 12.0.0.6, 00:34:27, GigabitEthernet0/1
+C        12.1.1.1/32 is directly connected, Loopback0
+i L1     12.2.2.2/32 [115/20] via 12.0.0.6, 00:34:27, GigabitEthernet0/1
+i L1     12.3.3.3/32 [115/20] via 12.0.0.2, 00:34:27, GigabitEthernet0/2
+C        12.10.0.0/24 is directly connected, Loopback1
+L        12.10.0.1/32 is directly connected, Loopback1
+i L1     12.11.0.0/24 [115/20] via 12.0.0.6, 00:34:27, GigabitEthernet0/1
+i L1     12.12.0.0/24 [115/20] via 12.0.0.2, 00:34:27, GigabitEthernet0/2
+14.0.0.0/8 is variably subnetted, 9 subnets, 3 masks
+B        14.0.0.0/30 [200/0] via 12.3.3.3, 00:33:26
+B        14.0.0.4/30 [200/0] via 12.3.3.3, 00:33:26
+B        14.0.0.8/30 [200/20] via 12.3.3.3, 00:33:26
+B        14.4.4.4/32 [200/0] via 12.3.3.3, 00:33:26
+B        14.5.5.5/32 [200/20] via 12.3.3.3, 00:33:26
+B        14.6.6.6/32 [200/20] via 12.3.3.3, 00:33:26
+B        14.10.0.0/24 [200/0] via 12.3.3.3, 00:33:26
+B        14.11.0.0/24 [200/20] via 12.3.3.3, 00:33:26
+B        14.12.0.0/24 [200/20] via 12.3.3.3, 00:33:26
+155.100.0.0/30 is subnetted, 1 subnets
+i L1     155.100.1.0 [115/20] via 12.0.0.2, 00:34:27, GigabitEthernet0/2
+172.16.0.0/24 is subnetted, 4 subnets
+S        172.16.0.0 is directly connected, Null0
+S        172.16.1.0 is directly connected, Null0
+S        172.16.2.0 is directly connected, Null0
+S        172.16.3.0 is directly connected, Null0
+\end{lstlisting}
+
+\section{Example Traceroute}
+
+\subsection{Real Hardware}
+
+\begin{lstlisting}
+R1#traceroute 14.0.0.9
+
+Type escape sequence to abort.
+Tracing the route to 14.0.0.9
+
+1 12.0.0.2 8 msec 4 msec 4 msec
+2 155.100.1.2 124 msec 48 msec 52 msec
+3 14.0.0.6 [AS 6000] 36 msec 60 msec 40 msec
+\end{lstlisting}
+
+\subsection{Emulated Device}
+\begin{lstlisting}
+R1#traceroute 14.0.0.9
+Type escape sequence to abort.
+Tracing the route to 14.0.0.9
+VRF info: (vrf in name/id, vrf out name/id)
+1 12.0.0.2 2 msec 2 msec 1 msec
+2 155.100.1.2 8 msec 8 msec 16 msec
+3 14.0.0.6 [AS 6000] 8 msec 16 msec 7 msec
+\end{lstlisting}
+
+\section{BGP Peers on edge device}
+
+\subsection{Real Hardware}
+
+\begin{lstlisting}
+R3#sh ip bgp summary
+BGP router identifier 12.3.3.3, local AS number 5000
+BGP table version is 27, main routing table version 27
+19 network entries using 2280 bytes of memory
+19 path entries using 988 bytes of memory
+6/5 BGP path/bestpath attribute entries using 744 bytes of memory
+1 BGP AS-PATH entries using 24 bytes of memory
+0 BGP route-map cache entries using 0 bytes of memory
+0 BGP filter-list cache entries using 0 bytes of memory
+Bitfield cache entries: current 2 (at peak 3) using 64 bytes of memory
+BGP using 4100 total bytes of memory
+BGP activity 22/3 prefixes, 22/3 paths, scan interval 60 secs
+
+Neighbor        V    AS MsgRcvd MsgSent   TblVer  InQ OutQ Up/Down  State/PfxRcd
+12.1.1.1        4  5000     138     164       27    0    0 02:14:40        0
+12.2.2.2        4  5000     138     164       27    0    0 02:14:43        0
+14.4.4.4        4  6000     125     126       27    0    0 01:50:13        9
+\end{lstlisting}
+
+\subsection{Emulated Device}
+\begin{lstlisting}
+content...R3#sh ip bgp summary
+BGP router identifier 12.12.0.1, local AS number 5000
+BGP table version is 23, main routing table version 23
+18 network entries using 2520 bytes of memory
+18 path entries using 1440 bytes of memory
+5/5 BGP path/bestpath attribute entries using 760 bytes of memory
+1 BGP AS-PATH entries using 24 bytes of memory
+0 BGP route-map cache entries using 0 bytes of memory
+0 BGP filter-list cache entries using 0 bytes of memory
+BGP using 4744 total bytes of memory
+BGP activity 18/0 prefixes, 18/0 paths, scan interval 60 secs
+
+Neighbor        V           AS MsgRcvd MsgSent   TblVer  InQ OutQ Up/Down  State/PfxRcd
+12.1.1.1        4         5000      41      48       23    0    0 00:35:16        0
+12.2.2.2        4         5000      42      48       23    0    0 00:35:18        0
+14.4.4.4        4         6000      44      44       23    0    0 00:35:17        9
+\end{lstlisting}
 
 \end{appendices}
 
